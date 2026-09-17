@@ -61,6 +61,36 @@ The expected result is total:
 
     33 device trees / 14040 nodes -- missing=0  differing=0  extra=0
 
+### The blind spot, and how it bit
+
+The phandle-aware comparison has a hole worth understanding, because it let a
+real bug through. It calls two cells equal when both are phandles resolving to
+the same path. If a property is MISCLASSIFIED as phandle-bearing, the wrong
+cells get symbolised on our side, dtc renumbers them, and the comparison still
+passes -- because the same wrong rule is applied to both sides.
+
+That is exactly what happened to `assigned-clock-parents`. It is a phandle+args
+list governed by the target's `#clock-cells`, but it was listed as a bare
+phandle. Every clock INDEX cell was therefore symbolised, dtc renumbered them,
+and each index shifted by one:
+
+    vendor  assigned-clock-parents = <&cru 4> <&cru 5>   (GPLL, NPLL)
+    ours    assigned-clock-parents = <&cru 5> <&cru 6>   (NPLL, ARMCLK)
+
+which silently reparented both VOP pixel clocks. The kernel said so -
+`clk: failed to reparent dclk_vop1 to armclk: -22`, a line the vendor kernel
+never prints - and the visible symptom was a barely perceptible flicker.
+
+`audit.py` catches cells changed UNINTENTIONALLY, which is a different and
+also useful class. It cannot catch misclassification, for the same circular
+reason: misclassification changes what counts as intended.
+
+**The check that does catch it** is to list every property NAME whose raw cells
+differ from the vendor's, and confirm each one is genuinely phandle-bearing. A
+plain-data property showing up in that list -- `reg`, `interrupts`,
+`brightness-levels`, `opp-hz` -- means a cell is being rewritten that should
+never be touched. Run it whenever the classification in `dtsgen.py` changes.
+
 This check is not ceremonial. It caught four real bugs that a single-board
 spot-check passed: `rockchip,pins` carries a phandle in every 4th cell and was
 being emitted as a raw integer that dtc then renumbered, silently repointing

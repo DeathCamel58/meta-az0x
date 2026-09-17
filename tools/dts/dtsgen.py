@@ -24,7 +24,7 @@ CELLED = {
 SIMPLE = {
     'interrupt-parent', 'remote-endpoint', 'memory-region', 'operating-points-v2',
     'next-level-cache', 'cpu', 'rockchip,grf', 'rockchip,pmu', 'rockchip,pmugrf',
-    'rockchip,hdmi-phy', 'assigned-clock-parents', 'clock-parent',
+    'rockchip,hdmi-phy',
     # found by round-tripping all 31 boards: each of these silently repointed
     # because the decompiler leaves them as bare phandle integers
     'ddc-i2c-bus', 'phy-handle', 'mmc-pwrseq', 'backlight', 'panel', 'target',
@@ -48,7 +48,12 @@ def is_celled(k):
     if k in CELLED: return CELLED[k]
     if k.endswith('-gpios') or k.endswith('-gpio'): return '#gpio-cells'
     if k.startswith('pinctrl-') and k[8:].isdigit(): return '__PINCTRL__'
-    if k == 'assigned-clocks': return '#clock-cells'
+    # assigned-clock-parents is a phandle+args list governed by the TARGET's
+    # #clock-cells, NOT a bare phandle. Getting this wrong symbolises the clock
+    # INDEX cells as phandles, dtc renumbers them, and every index shifts -
+    # which silently reparented both VOP pixel clocks on this board.
+    if k in ('assigned-clocks', 'assigned-clock-parents', 'clock-parent'):
+        return '#clock-cells'
     if k == 'gpio': return '#gpio-cells'
     return False
 def is_simple(k):
@@ -72,6 +77,11 @@ def parse(path):
         m = re.match(r'^([\w@,.#+-]+)\s*=\s*(.*);$', s)
         if m:
             k, v = m.group(1), m.group(2).strip()
+            # STRING_LIST_NORM: dtc renders a string list as "a", "b" while our
+            # decompiles carry "a\0b". Same bytes; normalise so both sources
+            # compare and emit identically.
+            if v.startswith('"') and '", "' in v:
+                v = v.replace('", "', '\\0')
             props[p].append((k, v))
             if k in ('phandle', 'linux,phandle'):
                 try: ph[int(v.strip('<> '), 16)] = p

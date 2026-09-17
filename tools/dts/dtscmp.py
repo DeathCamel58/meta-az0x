@@ -9,6 +9,9 @@ symbolised in one file and not the other.
 """
 import os, re, sys, json, glob, os
 from collections import defaultdict
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from dtsgen import symbolise
 
 HEX = re.compile(r'0x[0-9a-fA-F]+')
 
@@ -43,32 +46,49 @@ def parse(path):
             props[p].append((m.group(1), None))
     return dict(props), ph
 
-def cells_equal(va, vb, pha, phb):
-    """Compare two property value strings under the phandle rule."""
+def cells_equal(va, vb, pha, phb, k=None, na=None, nb=None):
+    """Compare two property values.
+
+    When the caller supplies the node dicts we settle it with the SAME
+    classifier the emitter uses: symbolise() rewrites exactly the cells that
+    are phandles into &{path} and leaves every other cell as a number, so two
+    values are equal iff they symbolise identically. That is right in both
+    directions at once -- a genuine phandle is compared by what it points at,
+    while a clock index that merely collides with some phandle value stays a
+    number.
+
+    Comparing raw numbers first was wrong (two boards both had pinctrl-0 =
+    <0x49> pointing at different nodes); comparing resolved paths for every
+    cell was equally wrong (it invented differences for plain indices).
+    """
     if va is None or vb is None:
         return va == vb
+    if k is not None and na is not None and nb is not None:
+        try:
+            return symbolise(k, va, na, pha) == symbolise(k, vb, nb, phb)
+        except Exception:
+            pass
     ta, tb = HEX.findall(va), HEX.findall(vb)
-    if HEX.sub('#', va) != HEX.sub('#', vb):   # non-numeric skeleton must match
+    if HEX.sub('#', va) != HEX.sub('#', vb):
         return False
     if len(ta) != len(tb):
         return False
     for a, b in zip(ta, tb):
-        na, nb = int(a, 16), int(b, 16)
-        if na == nb:
-            continue
-        pa, pb = pha.get(na), phb.get(nb)
-        if pa is not None and pa == pb:
-            continue
-        return False
+        if int(a, 16) != int(b, 16):
+            return False
     return True
 
-def node_equal(pa_list, pb_list, pha, phb):
-    a = [(k, v) for k, v in pa_list if k != 'phandle' and k != 'linux,phandle']
-    b = [(k, v) for k, v in pb_list if k != 'phandle' and k != 'linux,phandle']
-    if len(a) != len(b): return False
+
+def node_equal(pa_list, pb_list, pha, phb, na=None, nb=None):
+    a = [(k, v) for k, v in pa_list if k not in ('phandle', 'linux,phandle')]
+    b = [(k, v) for k, v in pb_list if k not in ('phandle', 'linux,phandle')]
+    if len(a) != len(b):
+        return False
     for (ka, va), (kb, vb) in zip(sorted(a), sorted(b)):
-        if ka != kb: return False
-        if not cells_equal(va, vb, pha, phb): return False
+        if ka != kb:
+            return False
+        if not cells_equal(va, vb, pha, phb, ka, na, nb):
+            return False
     return True
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-import sys, os, re, glob, json
+import sys, os, re, glob, json, shutil
 from collections import defaultdict
 S=os.environ.get('AZ0X_DTS_WORK', 'dts-work')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -6,6 +6,22 @@ from dtsgen import parse, write_tree
 from dtscmp import node_equal
 
 OUT='re-work/dts/inferred'
+
+# --- hand-written per-board overlays -----------------------------------------
+# A board may need overrides the vendor template cannot express, e.g. what
+# u-boot rewrites at boot. Those live in dts/fitted/<fam>-<board>-fitted.dtsi
+# and are included LAST so they win.
+#
+# This used to be a manual step documented in the README, and it silently broke:
+# the re-add anchored on a feature include whose name changed when the corpus
+# grew, the string replace matched nothing, and a build shipped without the
+# overrides. Generating the include removes the chance to forget.
+FITTED_DIR = 're-work/dts/fitted'
+
+def fitted_for(fam, board):
+    p = os.path.join(FITTED_DIR, f'{fam}-{board}-fitted.dtsi')
+    return p if os.path.exists(p) else None
+
 os.makedirs(OUT, exist_ok=True)
 
 # True mainline rk3288.dtsi node set (NOT evb n firefly -- that wrongly captured
@@ -138,6 +154,11 @@ def build(fam, socinc):
                 fh.write('// SPDX-License-Identifier: GPL-2.0-or-later OR MIT\n/dts-v1/;\n\n')
                 fh.write(f'#include "{fam}-{b}-base.dtsi"\n')
                 for i in incs: fh.write(f'#include "{fam}-{i}.dtsi"\n')
+                fp = fitted_for(fam, b)
+                if fp:
+                    shutil.copy(fp, f'{OUT}/{fam}-{b}-fitted.dtsi')
+                    fh.write('\n/* last: overrides status/compatible set above */\n')
+                    fh.write(f'#include "{fam}-{b}-fitted.dtsi"\n')
     # -c files need the base board's option includes too
     return P, boards, feat, {'from_ml':len(from_ml),'changed':len(changed),'new':len(new),
                              'common':len(common),'varying':len(varying),'partial':len(partial)}
