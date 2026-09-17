@@ -12,7 +12,15 @@ IMAGE_FEATURES += "debug-tweaks ssh-server-openssh"
 # --- Which desktop -----------------------------------------------------------
 # Set AZ0X_DESKTOP in local.conf. Tiers, cheapest first:
 #
-#   weston  Wayland compositor, DRM/KMS backend.        <- default, recommended
+#   sato    Yocto's own reference desktop for small touchscreens.  <- default
+#           Matchbox WM + panel + desktop launcher, and crucially
+#           matchbox-keyboard with BOTH a panel applet (a real toggle button)
+#           and a GTK input-method module that raises it on text focus. Also
+#           brings a terminal, text editor, file manager, settings and network
+#           config. All of it lives in poky - no extra layer to clone.
+#           X11-based, so it needs x11 in DISTRO_FEATURES.
+#
+#   weston  Wayland compositor, DRM/KMS backend.
 #           No extra layer and no x11. The distro already has the wayland and
 #           opengl DISTRO_FEATURES, but it needs ONE more:
 #
@@ -30,18 +38,47 @@ IMAGE_FEATURES += "debug-tweaks ssh-server-openssh"
 #   gnome   Full GNOME. Needs meta-gnome in BBLAYERS. Very big; see the space
 #           note - this will not fit an az01 rootfs partition.
 #
-AZ0X_DESKTOP ?= "weston"
+AZ0X_DESKTOP ?= "sato"
+
+# Each tier contributes an IMAGE_FEATURE rather than naming its packagegroup
+# directly. That matters for more than tidiness: rootfs-postcommands.bbclass
+# derives the systemd default target from IMAGE_FEATURES -
+#
+#   SYSTEMD_DEFAULT_TARGET ?= contains_any(IMAGE_FEATURES, [x11-base, weston],
+#                                          graphical.target, multi-user.target)
+#
+# and weston.service is WantedBy=graphical.target. Install the packagegroup by
+# hand and the unit is enabled but never started, because default.target stays
+# multi-user.target. That is exactly what happened on the first flash: the
+# device booted clean to a login prompt with no errors and no compositor.
+AZ0X_DESKTOP_FEATURES_sato = "x11-base x11-sato"
+AZ0X_DESKTOP_FEATURES_weston = "weston"
+AZ0X_DESKTOP_FEATURES_xfce = "x11-base"
+AZ0X_DESKTOP_FEATURES_gnome = "x11-base"
+
+AZ0X_DESKTOP_FEATURES = "${@d.getVar('AZ0X_DESKTOP_FEATURES_' + (d.getVar('AZ0X_DESKTOP') or '')) or ''}"
+IMAGE_FEATURES += "${AZ0X_DESKTOP_FEATURES}"
+
+# FEATURE_PACKAGES_weston already pulls packagegroup-core-weston, so these are
+# only the extras each tier wants on top.
+# x11-sato already pulls matchbox-keyboard, its panel applet and the GTK input
+# method, plus terminal/editor/file-manager. Nothing to add by hand.
+# az0x-panel-rotation drops the xorg.conf.d snippet that rotates the display at
+# X startup and matches the touch transform to it. Board-specific; see each
+# conf/machine/*.conf. Harmless on boards where it is unset - it installs
+# nothing rather than guess.
+AZ0X_DESKTOP_INSTALL_sato = "az0x-panel-rotation"
 
 AZ0X_DESKTOP_INSTALL_weston = " \
-    packagegroup-core-weston \
-    weston-init \
     wayland-utils \
 "
 AZ0X_DESKTOP_INSTALL_xfce = " \
     packagegroup-xfce-base \
+    az0x-panel-rotation \
 "
 AZ0X_DESKTOP_INSTALL_gnome = " \
     packagegroup-gnome-desktop \
+    az0x-panel-rotation \
 "
 
 AZ0X_DESKTOP_INSTALL = "${@d.getVar('AZ0X_DESKTOP_INSTALL_' + (d.getVar('AZ0X_DESKTOP') or '')) or ''}"
@@ -96,7 +133,7 @@ AZ0X_DEBUG_INSTALL ?= ""
 # providers three minutes into a build.
 python () {
     want = d.getVar('AZ0X_DESKTOP') or ''
-    tiers = ('weston', 'xfce', 'gnome')
+    tiers = ('sato', 'weston', 'xfce', 'gnome')
     if want not in tiers:
         raise bb.parse.SkipRecipe(
             "AZ0X_DESKTOP is '%s'; expected one of %s" % (want, ', '.join(tiers)))
@@ -118,9 +155,10 @@ python () {
             "'DISTRO_FEATURES:append = \" pam\"' to local.conf. It is not "
             "forced here because pam affects every image in this tree.")
 
-    if want == 'xfce' and 'x11' not in features:
+    if want in ('sato', 'xfce') and 'x11' not in features:
         raise bb.parse.SkipRecipe(
-            "AZ0X_DESKTOP = 'xfce' is an X11 desktop, but local.conf removes "
-            "x11 from DISTRO_FEATURES. Put it back, or use the weston tier "
-            "which needs no x11.")
+            "AZ0X_DESKTOP = '%s' is an X11 desktop, but x11 is not in "
+            "DISTRO_FEATURES - local.conf removes it by default. Drop x11 from "
+            "that :remove line, or use the weston tier which needs no x11."
+            % want)
 }

@@ -74,3 +74,14 @@ SERIAL_CONSOLES = "115200;ttyS2"
 MACHINE_FEATURES = "usbhost usbgadget alsa screen ext2 rtc"
 
 MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "kernel-modules"
+
+# --- X11 ---------------------------------------------------------------------
+# meta-rockchip's rockchip-defaults.inc lists xserver-xorg-xvfb in XSERVER, but
+# poky's xserver-xorg does not enable the xvfb PACKAGECONFIG by default, so that
+# package is never produced. Any x11 image on a rockchip machine then fails
+# do_rootfs with "nothing provides xserver-xorg-xvfb".
+#
+# Xvfb is a headless virtual framebuffer X server - pointless on a board with a
+# real panel - so drop it from the list rather than switch the PACKAGECONFIG on
+# and ship a server we would never run.
+XSERVER:remove = "xserver-xorg-xvfb"
