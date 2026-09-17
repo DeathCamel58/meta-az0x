@@ -1,0 +1,54 @@
+# TEMPLATE - rename to az01-engine-graft.bb to enable image flavor (b).
+#
+# Grafts the vendor Engine application stack onto the custom base. Everything
+# here is an unmodified vendor binary: nothing is rebuilt, so the ABI the
+# binaries were linked against (glibc 2.39 / gcc 13.4 / arm-poky-linux-gnueabi,
+# armv7ve + Thumb-2 + NEON + VFPv4 hard-float) must match what az01.conf
+# produces. It does - that is the whole point of pinning scarthgap.
+
+SUMMARY = "Vendor Engine application stack, grafted as prebuilt binaries"
+LICENSE = "Proprietary"
+LIC_FILES_CHKSUM = ""
+
+# Point this at an extracted vendor rootfs.
+AZ01_ENGINE_SRC ?= "/home/deathcamel57/Downloads/inmusic-fw/extracted/JP13-5.0.4/rootfs"
+
+INHIBIT_PACKAGE_STRIP = "1"
+INHIBIT_PACKAGE_DEBUG_SPLIT = "1"
+INHIBIT_SYSROOT_STRIP = "1"
+EXCLUDE_FROM_SHLIBS = "1"
+
+do_configure[noexec] = "1"
+do_compile[noexec] = "1"
+
+COMPATIBLE_MACHINE = "az01-premium"
+PACKAGE_ARCH = "${MACHINE_ARCH}"
+
+do_install() {
+    # 1. The application tree itself (~109 MiB on JP13 5.0.14).
+    install -d ${D}/usr/Engine
+    cp -a ${AZ01_ENGINE_SRC}/usr/Engine/. ${D}/usr/Engine/
+
+    # 2. systemd units that start it. Enumerate them from the vendor rootfs
+    #    rather than hardcoding - the set changes between releases:
+    #      grep -rl Engine <rootfs>/usr/lib/systemd/system/
+    # install -d ${D}${systemd_system_unitdir}
+    # install -m 0644 ${AZ01_ENGINE_SRC}/usr/lib/systemd/system/engine*.service \
+    #     ${D}${systemd_system_unitdir}/
+
+    # 3. LD_PRELOAD shims (dtshim / drmatomic / alsashim) and whatever
+    #    environment file references them.
+    # install -d ${D}${libdir}
+    # install -m 0644 ${AZ01_ENGINE_SRC}/usr/lib/*shim*.so ${D}${libdir}/
+
+    # 4. Qt / EGLFS runtime + Mali userspace. Prefer building Qt from
+    #    meta-qt5 against this same tune over grafting it, unless the vendor
+    #    patched it.
+}
+
+FILES:${PN} += "/usr/Engine ${systemd_system_unitdir} ${libdir}/*.so"
+INSANE_SKIP:${PN} += "arch ldflags already-stripped file-rdeps dev-so libdir staticdev"
+
+# The vendor binaries link against the Mali blob and the usual Qt/GStreamer
+# stack; list those as RDEPENDS once you know which of them you rebuild vs graft.
+RDEPENDS:${PN} = ""
