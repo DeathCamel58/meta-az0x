@@ -4,6 +4,8 @@
 #                         builds for whichever MACHINE is selected.
 #   az01-image-engine.bb  (flavor b) adds the vendor Engine application stack.
 #                         az01-only: the grafted tree is armv7hf JP13 material.
+#   az0x-image-desktop.bb (flavor c) adds a desktop environment. STUB - the
+#                         weston tier resolves; nothing run on hardware yet.
 #
 # One image recipe serves every MACHINE; Yocto is per-MACHINE, so
 # `MACHINE=az01-player bitbake az0x-image` and any other board each emit their
