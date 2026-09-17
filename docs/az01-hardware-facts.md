@@ -22,6 +22,19 @@ exactly four:
 | `/reserved-memory/framebuffer` | `disabled` | **`okay`** |
 | `/usb@ff580000` | `disabled` | **`okay`** |
 
+It also rewrites exactly one `compatible`, which matters more than all four:
+
+| node | shipped DTB | live |
+|---|---|---|
+| `/mipi@ff960000/panel@0` | `urt,umo-p076md-t` | **`urt,umoh-9522md-t`** |
+
+Verified by diffing all 137 compatible properties of the live tree against the
+template; that is the only one that differs. No vendor DTB in the family
+declares `umoh-9522md-t` at all - 22 boards say `p076md-t` and 9 say
+`p080md-t` - so the template records design intent and u-boot records what is
+physically fitted. Writing a panel driver against the template compatible
+would have produced a driver for hardware this unit does not have.
+
 So a device tree we write ourselves must apply these too, or touch and one USB
 controller will be dead and the bootloader framebuffer handover will not
 happen. The touch swap is presumably u-boot probing which controller is fitted;

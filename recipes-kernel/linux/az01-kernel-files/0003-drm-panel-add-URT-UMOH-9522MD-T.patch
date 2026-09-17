@@ -1,0 +1,313 @@
+From dd258383ce3c384a8fb01b1e8180cba87b909882 Mon Sep 17 00:00:00 2001
+From: az0x <dev@localhost>
+Date: Thu, 17 Sep 2026 15:26:05 -0400
+Subject: [PATCH] drm/panel: add URT UMOH-9522MD-T, the panel fitted to inMusic
+ AZ01
+
+The 800x1280 DSI panel on inMusic AZ01 boards (Denon DJ Prime GO and
+relatives). Nothing in-tree drives it, and without a drm_panel the whole
+display pipeline stays down: rockchip-drm is component-based and will not
+finish binding until every component registers, so there is no card0 at all
+and X has no DRM device.
+
+This driver sends no panel initialisation sequence, by design. u-boot already
+brings the display up before handing over - the VOP reports "enabled by
+bootloader" and the device tree carries a framebuffer reservation for the
+handover - so the panel controller is configured by the time Linux probes.
+prepare() therefore takes a reference on the supply and deliberately does not
+touch the reset line, and the reset GPIO is claimed GPIOD_ASIS so that merely
+requesting it cannot drive the panel out of the state u-boot left it in.
+
+The mode is not guessed. It was read field for field off the running vendor
+kernel with modetest:
+
+  800x1280 60.06  800 877 901 925  1280 1292 1296 1314  73000  preferred
+
+and the pixel clock independently confirmed as dclk_vop1 = 73000000.
+
+The lane count is the one parameter recoverable neither from the device tree
+nor from sysfs on the vendor kernel. Four is the arithmetic fit: 73 MHz at
+24bpp is 1.752 Gbps, so 438 Mbps per lane over four, where two lanes would
+demand 876 Mbps per lane.
+
+Note the compatible. The shipped device tree names urt,umo-p076md-t, but
+u-boot rewrites it: the panel actually fitted to this unit is a
+umoh-9522md-t, which is what the vendor kernel binds. No vendor device tree in
+the family declares that string at all.
+
+Upstream-Status: Inappropriate [vendor board support]
+
+Relies on the bootloader having initialised the panel rather than carrying an
+initialisation sequence, which is not acceptable upstream; the panel would
+need its DSI init recovered before this could be proposed.
+---
+ drivers/gpu/drm/panel/Kconfig                 |  13 ++
+ drivers/gpu/drm/panel/Makefile                |   1 +
+ .../gpu/drm/panel/panel-urt-umoh-9522md-t.c   | 219 ++++++++++++++++++
+ 3 files changed, 233 insertions(+)
+ create mode 100644 drivers/gpu/drm/panel/panel-urt-umoh-9522md-t.c
+
+diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
+index 3a2f4a9..eda216a 100644
+--- a/drivers/gpu/drm/panel/Kconfig
++++ b/drivers/gpu/drm/panel/Kconfig
+@@ -788,6 +788,19 @@ config DRM_PANEL_TRULY_NT35597_WQXGA
+ 	  Say Y here if you want to enable support for Truly NT35597 WQXGA Dual DSI
+ 	  Video Mode panel
+ 
++config DRM_PANEL_URT_UMOH_9522MD_T
++	tristate "URT UMOH-9522MD-T DSI panel"
++	depends on OF
++	depends on DRM_MIPI_DSI
++	depends on BACKLIGHT_CLASS_DEVICE
++	help
++	  Say Y here to support the URT UMOH-9522MD-T 800x1280 MIPI-DSI panel
++	  fitted to inMusic AZ01 boards such as the Denon DJ Prime GO.
++
++	  The driver sends no initialisation sequence: u-boot brings the panel
++	  up before handing over, and this only supplies the mode so that the
++	  component-based rockchip-drm can finish binding.
++
+ config DRM_PANEL_VISIONOX_RM69299
+ 	tristate "Visionox RM69299"
+ 	depends on OF
+diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
+index 433e93d..8028ade 100644
+--- a/drivers/gpu/drm/panel/Makefile
++++ b/drivers/gpu/drm/panel/Makefile
+@@ -80,6 +80,7 @@ obj-$(CONFIG_DRM_PANEL_TPO_TD028TTEC1) += panel-tpo-td028ttec1.o
+ obj-$(CONFIG_DRM_PANEL_TPO_TD043MTEA1) += panel-tpo-td043mtea1.o
+ obj-$(CONFIG_DRM_PANEL_TPO_TPG110) += panel-tpo-tpg110.o
+ obj-$(CONFIG_DRM_PANEL_TRULY_NT35597_WQXGA) += panel-truly-nt35597.o
++obj-$(CONFIG_DRM_PANEL_URT_UMOH_9522MD_T) += panel-urt-umoh-9522md-t.o
+ obj-$(CONFIG_DRM_PANEL_VISIONOX_RM69299) += panel-visionox-rm69299.o
+ obj-$(CONFIG_DRM_PANEL_VISIONOX_VTDR6130) += panel-visionox-vtdr6130.o
+ obj-$(CONFIG_DRM_PANEL_VISIONOX_R66451) += panel-visionox-r66451.o
+diff --git a/drivers/gpu/drm/panel/panel-urt-umoh-9522md-t.c b/drivers/gpu/drm/panel/panel-urt-umoh-9522md-t.c
+new file mode 100644
+index 0000000..9b84f63
+--- /dev/null
++++ b/drivers/gpu/drm/panel/panel-urt-umoh-9522md-t.c
+@@ -0,0 +1,219 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * URT UMOH-9522MD-T MIPI-DSI panel, as fitted to inMusic AZ01 boards
++ * (Denon DJ Prime GO and relatives).
++ *
++ * This driver deliberately sends NO panel initialisation sequence. u-boot
++ * already brings the display up before handing over - the VOP reports
++ * "enabled by bootloader" and the device tree carries a framebuffer
++ * reservation for the handover - so the panel controller is already
++ * configured by the time Linux probes. All that is missing for the display
++ * pipeline to come up is a drm_panel that supplies the mode, because
++ * rockchip-drm is component-based and will not finish binding until every
++ * component, panel included, registers.
++ *
++ * Consequently prepare() must NOT touch the reset line: asserting it would
++ * clear the state u-boot established and leave a dark panel with no way to
++ * restore it short of the init sequence this driver does not have.
++ *
++ * The mode is not guessed. It was read off the running vendor kernel with
++ * modetest, field for field:
++ *
++ *   800x1280 60.06  800 877 901 925  1280 1292 1296 1314  73000  preferred
++ *
++ * and the pixel clock independently confirmed as dclk_vop1 = 73000000.
++ *
++ * The lane count is the one parameter not recoverable from the device tree or
++ * from sysfs on the vendor kernel. Four is the arithmetic fit: 73 MHz x 24bpp
++ * = 1.752 Gbps, so 438 Mbps per lane over four. Two lanes would demand
++ * 876 Mbps per lane, which is unusual at this resolution. If the panel stays
++ * dark with the DSI host reporting link errors, two lanes is the fallback to
++ * try.
++ */
++
++#include <linux/backlight.h>
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/regulator/consumer.h>
++
++#include <drm/drm_mipi_dsi.h>
++#include <drm/drm_modes.h>
++#include <drm/drm_panel.h>
++
++struct umoh9522 {
++	struct drm_panel panel;
++	struct mipi_dsi_device *dsi;
++	struct regulator *supply;
++	struct gpio_desc *reset;
++	enum drm_panel_orientation orientation;
++	bool prepared;
++};
++
++/* Read with modetest on the vendor kernel; see the comment above. */
++static const struct drm_display_mode umoh9522_mode = {
++	.clock		= 73000,
++	.hdisplay	= 800,
++	.hsync_start	= 877,
++	.hsync_end	= 901,
++	.htotal		= 925,
++	.vdisplay	= 1280,
++	.vsync_start	= 1292,
++	.vsync_end	= 1296,
++	.vtotal		= 1314,
++	.width_mm	= 94,
++	.height_mm	= 151,
++	.type		= DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED,
++};
++
++static inline struct umoh9522 *to_umoh9522(struct drm_panel *panel)
++{
++	return container_of(panel, struct umoh9522, panel);
++}
++
++static int umoh9522_prepare(struct drm_panel *panel)
++{
++	struct umoh9522 *p = to_umoh9522(panel);
++	int ret;
++
++	if (p->prepared)
++		return 0;
++
++	/*
++	 * The regulator is already on - u-boot enabled it and the DT marks it
++	 * regulator-boot-on - so this only takes a reference. The reset line is
++	 * intentionally left alone; see the file comment.
++	 */
++	ret = regulator_enable(p->supply);
++	if (ret)
++		return ret;
++
++	p->prepared = true;
++	return 0;
++}
++
++static int umoh9522_unprepare(struct drm_panel *panel)
++{
++	struct umoh9522 *p = to_umoh9522(panel);
++
++	if (!p->prepared)
++		return 0;
++
++	regulator_disable(p->supply);
++	p->prepared = false;
++	return 0;
++}
++
++static int umoh9522_get_modes(struct drm_panel *panel,
++			      struct drm_connector *connector)
++{
++	struct drm_display_mode *mode;
++
++	mode = drm_mode_duplicate(connector->dev, &umoh9522_mode);
++	if (!mode)
++		return -ENOMEM;
++
++	drm_mode_set_name(mode);
++	drm_mode_probed_add(connector, mode);
++
++	connector->display_info.width_mm = umoh9522_mode.width_mm;
++	connector->display_info.height_mm = umoh9522_mode.height_mm;
++	connector->display_info.bpc = 8;
++
++	return 1;
++}
++
++static enum drm_panel_orientation umoh9522_get_orientation(struct drm_panel *panel)
++{
++	return to_umoh9522(panel)->orientation;
++}
++
++static const struct drm_panel_funcs umoh9522_funcs = {
++	.prepare	= umoh9522_prepare,
++	.unprepare	= umoh9522_unprepare,
++	.get_modes	= umoh9522_get_modes,
++	.get_orientation = umoh9522_get_orientation,
++};
++
++static int umoh9522_probe(struct mipi_dsi_device *dsi)
++{
++	struct device *dev = &dsi->dev;
++	struct umoh9522 *p;
++	int ret;
++
++	p = devm_kzalloc(dev, sizeof(*p), GFP_KERNEL);
++	if (!p)
++		return -ENOMEM;
++
++	p->dsi = dsi;
++	mipi_dsi_set_drvdata(dsi, p);
++
++	p->supply = devm_regulator_get(dev, "power");
++	if (IS_ERR(p->supply))
++		return dev_err_probe(dev, PTR_ERR(p->supply),
++				     "failed to get the panel supply\n");
++
++	/*
++	 * Claimed as ASIS so that requesting it does not drive it, which would
++	 * reset the panel out from under u-boot's initialisation.
++	 */
++	p->reset = devm_gpiod_get_optional(dev, "reset", GPIOD_ASIS);
++	if (IS_ERR(p->reset))
++		return dev_err_probe(dev, PTR_ERR(p->reset),
++				     "failed to get the reset gpio\n");
++
++	ret = of_drm_get_panel_orientation(dev->of_node, &p->orientation);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to read the rotation\n");
++
++	dsi->lanes = 4;
++	dsi->format = MIPI_DSI_FMT_RGB888;
++	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
++			  MIPI_DSI_MODE_LPM;
++
++	drm_panel_init(&p->panel, dev, &umoh9522_funcs,
++		       DRM_MODE_CONNECTOR_DSI);
++
++	ret = drm_panel_of_backlight(&p->panel);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to get the backlight\n");
++
++	drm_panel_add(&p->panel);
++
++	ret = mipi_dsi_attach(dsi);
++	if (ret) {
++		drm_panel_remove(&p->panel);
++		return dev_err_probe(dev, ret, "failed to attach to the DSI host\n");
++	}
++
++	dev_info(dev, "registered (no init sequence; relying on the bootloader)\n");
++	return 0;
++}
++
++static void umoh9522_remove(struct mipi_dsi_device *dsi)
++{
++	struct umoh9522 *p = mipi_dsi_get_drvdata(dsi);
++
++	mipi_dsi_detach(dsi);
++	drm_panel_remove(&p->panel);
++}
++
++static const struct of_device_id umoh9522_of_match[] = {
++	{ .compatible = "urt,umoh-9522md-t" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, umoh9522_of_match);
++
++static struct mipi_dsi_driver umoh9522_driver = {
++	.probe = umoh9522_probe,
++	.remove = umoh9522_remove,
++	.driver = {
++		.name = "panel-urt-umoh-9522md-t",
++		.of_match_table = umoh9522_of_match,
++	},
++};
++module_mipi_dsi_driver(umoh9522_driver);
++
++MODULE_DESCRIPTION("URT UMOH-9522MD-T DSI panel");
++MODULE_LICENSE("GPL");
+-- 
+2.43.0
+

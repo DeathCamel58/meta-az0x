@@ -1,6 +1,6 @@
-From e75303c1be940b8f5a2bfb39f6dd8ce1dffa58d1 Mon Sep 17 00:00:00 2001
+From d9ccd43d04511f3e078ce9ee505534e6840e4f73 Mon Sep 17 00:00:00 2001
 From: az0x <dev@localhost>
-Date: Thu, 17 Sep 2026 14:48:23 -0400
+Date: Thu, 17 Sep 2026 15:52:31 -0400
 Subject: [PATCH] ARM: dts: rockchip: add inMusic AZ01/AZ05 device trees
 
 Device trees for inMusic's AZ01 and AZ05 boards (RK3288), covering the four
@@ -72,7 +72,7 @@ binaries rather than authored upstream.
  .../boot/dts/rockchip/rk3288-az01-jp08.dts    |   10 +
  .../dts/rockchip/rk3288-az01-jp11-base.dtsi   |  596 ++++++
  .../boot/dts/rockchip/rk3288-az01-jp11-c.dts  |   26 +
- .../dts/rockchip/rk3288-az01-jp11-fitted.dtsi |   57 +
+ .../dts/rockchip/rk3288-az01-jp11-fitted.dtsi |   97 +
  .../boot/dts/rockchip/rk3288-az01-jp11.dts    |   10 +
  .../dts/rockchip/rk3288-az01-jp13-base.dtsi   |  612 ++++++
  .../boot/dts/rockchip/rk3288-az01-jp13-c.dts  |   27 +
@@ -107,7 +107,7 @@ binaries rather than authored upstream.
  .../boot/dts/rockchip/rk3288-az05-nh08.dts    |    4 +
  .../dts/rockchip/rk3288-az05-opt-acva2.dtsi   |   22 +
  arch/arm/boot/dts/rockchip/rk3288-az05.dtsi   | 1905 +++++++++++++++++
- 65 files changed, 14552 insertions(+)
+ 65 files changed, 14592 insertions(+)
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-acv5s-base.dtsi
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-acv5s.dts
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi
@@ -6921,10 +6921,10 @@ index 0000000..32e5491
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-fitted.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-fitted.dtsi
 new file mode 100644
-index 0000000..75dd88c
+index 0000000..a88cefd
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-fitted.dtsi
-@@ -0,0 +1,57 @@
+@@ -0,0 +1,97 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/*
 + * What u-boot resolves on a JP11 at boot, applied statically.
@@ -6959,6 +6959,24 @@ index 0000000..75dd88c
 +		};
 +	};
 +
++	/*
++	 * u-boot rewrites the panel compatible too, not just status properties.
++	 * The template names a p076md-t; the panel actually fitted to this unit
++	 * is a umoh-9522md-t, and the vendor kernel binds
++	 * panel-urt-umoh-9522md-t accordingly. Verified by diffing all 137
++	 * compatible properties of the live tree against the template - this is
++	 * the only one that differs.
++	 *
++	 * Note NO vendor DTB in the family declares umoh-9522md-t: 22 boards say
++	 * p076md-t and 9 say p080md-t. So the template records the design intent
++	 * and u-boot records what is physically present.
++	 */
++	mipi@ff960000 {
++		panel@0 {
++			compatible = "urt,umoh-9522md-t";
++		};
++	};
++
 +	/* u-boot has already lit the VOP ("enabled by bootloader") and hands
 +	 * over its framebuffer reservation. */
 +	reserved-memory {
@@ -6969,6 +6987,28 @@ index 0000000..75dd88c
 +
 +	usb@ff580000 {
 +		status = "okay";
++	};
++
++	/*
++	 * Disable the VOP1 IOMMU.
++	 *
++	 * u-boot leaves the VOP actively scanning out, and mainline
++	 * rockchip-drm has no handover path for a running VOP - the vendor
++	 * kernel's "enabled by bootloader" support is not upstream, and the
++	 * rockchip,framebuffer-memory reservation is a vendor binding mainline
++	 * does not implement. The result is that rk_iommu cannot stall the
++	 * master it is attached to:
++	 *
++	 *   rk_iommu ff940300.iommu: Enable stall request timed out
++	 *   rockchip-vop ff940000.vop: failed to get pm runtime: -110
++	 *   [CRTC:44:crtc-1] commit wait timed out
++	 *
++	 * Without the IOMMU, rockchip-drm falls back to contiguous buffers and
++	 * never touches the stall path. Costs scatter-gather for the
++	 * framebuffer, which at 800x1280 is affordable.
++	 */
++	iommu@ff940300 {
++		status = "disabled";
 +	};
 +
 +	/*
