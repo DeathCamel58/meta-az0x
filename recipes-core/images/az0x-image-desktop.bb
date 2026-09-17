@@ -67,7 +67,7 @@ IMAGE_FEATURES += "${AZ0X_DESKTOP_FEATURES}"
 # X startup and matches the touch transform to it. Board-specific; see each
 # conf/machine/*.conf. Harmless on boards where it is unset - it installs
 # nothing rather than guess.
-AZ0X_DESKTOP_INSTALL_sato = "az0x-panel-rotation"
+AZ0X_DESKTOP_INSTALL_sato = "az0x-panel-rotation az0x-onscreen-keyboard"
 
 AZ0X_DESKTOP_INSTALL_weston = " \
     wayland-utils \

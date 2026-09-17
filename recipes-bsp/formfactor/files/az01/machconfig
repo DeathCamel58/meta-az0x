@@ -1,0 +1,19 @@
+# Form factor for the AZ01 family: a touchscreen with no physical keyboard.
+#
+# This is what tells Sato to put the on-screen keyboard toggle on the panel.
+# /etc/matchbox/session does:
+#
+#   if [ "$HAVE_KEYBOARD" = "1" ]; then KEYBOARD_APPLET=""
+#   else KEYBOARD_APPLET="keyboard"; fi
+#
+# and poky's default config assumes HAVE_KEYBOARD=1, so without this file the
+# applet is silently dropped and there is no way to type on the device at all.
+#
+# HAVE_TOUCHSCREEN=1 also hides the mouse cursor, which matchbox-window-manager
+# is passed via -use_cursor.
+HAVE_TOUCHSCREEN=1
+HAVE_KEYBOARD=0
+
+# Rotation is handled by az0x-panel-rotation at X startup, not by the session.
+DISPLAY_CAN_ROTATE=0
+DISPLAY_ORIENTATION=0
