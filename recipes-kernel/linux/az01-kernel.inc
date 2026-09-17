@@ -37,3 +37,9 @@ SRC_URI:append:az01 = " file://az01-base.cfg"
 # tools/dts/README.md. Each one is verified to rebuild to a DTB semantically
 # identical to the vendor's shipped blob before it lands here.
 SRC_URI:append:az01 = " file://0001-ARM-dts-rockchip-add-inMusic-AZ01-AZ05-device-trees.patch"
+
+# The DC-jack power supply. Nothing in-tree covers it: the jack is sensed by a
+# single SARADC channel behind a divider, with no charger IC. This also unblocks
+# the SBS battery, which names the ac-power node in its power-supplies list and
+# defers forever until that supply registers.
+SRC_URI:append:az01 = " file://0002-power-supply-add-inMusic-AZ01-DC-jack-driver.patch"

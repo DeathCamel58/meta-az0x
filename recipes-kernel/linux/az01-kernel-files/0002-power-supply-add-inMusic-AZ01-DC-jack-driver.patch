@@ -1,0 +1,286 @@
+From 94dc11d7dd4813ce8774b7e23cf6cfdeaadef258 Mon Sep 17 00:00:00 2001
+From: az0x <dev@localhost>
+Date: Thu, 17 Sep 2026 14:47:50 -0400
+Subject: [PATCH] power: supply: add inMusic AZ01 DC-jack supply driver
+
+The AZ01 boards (Denon DJ Prime GO and relatives) sense their DC barrel jack
+with one SARADC channel behind a resistive divider. There is no charger IC and
+no GPIO - that single voltage is the whole signal - so nothing in-tree covers
+it, and without a driver two things are broken: userspace cannot tell whether
+the unit is on external power, and the SBS battery on i2c3 never finishes
+probing, because it names this node in its power-supplies list and defers
+until the supply registers.
+
+The conversion constants are measured on a real Prime GO running the vendor
+kernel rather than taken from the vendor binary:
+
+	DC jack in	raw 663		18.64 V	 (vendor driver reported 18640 mV)
+	DC jack out	raw 561		15.82 V	 (the battery terminal voltage)
+
+The SARADC already exposes IIO_CHAN_INFO_SCALE derived from its vref-supply,
+so the driver reads the channel processed and only has to undo the divider;
+16:1 reproduces the vendor driver's reported voltage to within 0.04% at both
+points.
+
+Note the unplugged reading is the battery, so it tracks charge state. The
+threshold has to clear a fully charged 4S pack (16.8 V) while staying below
+the ~18.6 V adapter, so it defaults to 17.5 V rather than the midpoint of any
+one pair of samples. Both it and the divider ratio can be overridden from DT.
+
+Upstream-Status: Inappropriate [vendor board support]
+
+Written for inMusic product hardware from measurements taken on the device.
+The binding is not documented in Documentation/devicetree/bindings and the
+compatible is a vendor one, so this is not in upstreamable form.
+---
+ drivers/power/supply/Kconfig      |  11 ++
+ drivers/power/supply/Makefile     |   1 +
+ drivers/power/supply/az01-power.c | 202 ++++++++++++++++++++++++++++++
+ 3 files changed, 214 insertions(+)
+ create mode 100644 drivers/power/supply/az01-power.c
+
+diff --git a/drivers/power/supply/Kconfig b/drivers/power/supply/Kconfig
+index a61bb12..abfdc78 100644
+--- a/drivers/power/supply/Kconfig
++++ b/drivers/power/supply/Kconfig
+@@ -28,6 +28,17 @@ config POWER_SUPPLY_HWMON
+ 	  Say 'Y' here if you want power supplies to
+ 	  have hwmon sysfs interface too.
+ 
++config AZ01_POWER
++	tristate "inMusic AZ01 DC-jack power supply"
++	depends on IIO
++	help
++	  Say Y here to enable support for the DC barrel jack on inMusic AZ01
++	  boards (Denon DJ Prime GO and relatives). The jack is sensed with a
++	  single SARADC channel behind a resistive divider - there is no charger
++	  IC - and this exposes it as a Mains power supply. The SBS battery on
++	  these boards refers to this supply, so without it the battery never
++	  finishes probing.
++
+ config APM_POWER
+ 	tristate "APM emulation for class batteries"
+ 	depends on APM_EMULATION
+diff --git a/drivers/power/supply/Makefile b/drivers/power/supply/Makefile
+index a8a9fa6..a0abc8f 100644
+--- a/drivers/power/supply/Makefile
++++ b/drivers/power/supply/Makefile
+@@ -9,6 +9,7 @@ obj-$(CONFIG_POWER_SUPPLY)	+= power_supply.o
+ obj-$(CONFIG_POWER_SUPPLY_HWMON) += power_supply_hwmon.o
+ obj-$(CONFIG_GENERIC_ADC_BATTERY)	+= generic-adc-battery.o
+ 
++obj-$(CONFIG_AZ01_POWER)	+= az01-power.o
+ obj-$(CONFIG_APM_POWER)		+= apm_power.o
+ obj-$(CONFIG_AXP20X_POWER)	+= axp20x_usb_power.o
+ obj-$(CONFIG_IP5XXX_POWER)	+= ip5xxx_power.o
+diff --git a/drivers/power/supply/az01-power.c b/drivers/power/supply/az01-power.c
+new file mode 100644
+index 0000000..a682e63
+--- /dev/null
++++ b/drivers/power/supply/az01-power.c
+@@ -0,0 +1,202 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * inMusic AZ01 DC-jack power supply
++ *
++ * The AZ01 boards sense the DC barrel jack with a single SARADC channel behind
++ * a resistive divider. There is no charger IC to talk to and no GPIO: the only
++ * signal is that one voltage. This registers it as a Mains supply so that
++ * userspace, and the SBS battery on i2c3 which names this node in its
++ * power-supplies list, can tell whether the unit is on external power.
++ *
++ * The constants below were measured on a Denon DJ Prime GO (JP11) running the
++ * vendor kernel, not recovered from the vendor binary:
++ *
++ *	DC jack in	raw 663		18.64 V	 (vendor driver reported 18640 mV)
++ *	DC jack out	raw 561		15.82 V	 (this is the battery terminal)
++ *
++ * The unplugged reading is the battery, so it moves with charge state. The
++ * threshold therefore has to clear a fully charged 4S pack (16.8 V) while
++ * staying below the ~18.6 V adapter, which is why the default is 17.5 V rather
++ * than the midpoint of any single pair of readings.
++ */
++
++#include <linux/err.h>
++#include <linux/iio/consumer.h>
++#include <linux/mod_devicetable.h>
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/power_supply.h>
++#include <linux/property.h>
++#include <linux/workqueue.h>
++
++/* Clears a full 4S pack, stays under the adapter. See the comment above. */
++#define AZ01_POWER_DEFAULT_THRESHOLD_MV	17500
++
++/*
++ * The SARADC sees the jack through a divider, so the channel's processed value
++ * has to be scaled back up. 16:1 reproduces the vendor driver's reported
++ * voltage to within 0.04% at both measured points.
++ */
++#define AZ01_POWER_DEFAULT_DIVIDER	16
++
++#define AZ01_POWER_POLL_INTERVAL	msecs_to_jiffies(1000)
++
++struct az01_power {
++	struct device *dev;
++	struct iio_channel *chan;
++	struct power_supply *psy;
++	struct delayed_work poll;
++	u32 threshold_mv;
++	u32 divider;
++	bool online;
++};
++
++/* Returns the jack voltage in millivolts, before the divider is undone. */
++static int az01_power_read_mv(struct az01_power *p, int *mv)
++{
++	int ret, val;
++
++	ret = iio_read_channel_processed(p->chan, &val);
++	if (ret < 0)
++		return ret;
++
++	*mv = val * p->divider;
++	return 0;
++}
++
++static void az01_power_poll(struct work_struct *work)
++{
++	struct az01_power *p = container_of(work, struct az01_power, poll.work);
++	bool online;
++	int mv, ret;
++
++	ret = az01_power_read_mv(p, &mv);
++	if (!ret) {
++		online = mv >= p->threshold_mv;
++		if (online != p->online) {
++			p->online = online;
++			power_supply_changed(p->psy);
++		}
++	}
++
++	schedule_delayed_work(&p->poll, AZ01_POWER_POLL_INTERVAL);
++}
++
++static int az01_power_get_property(struct power_supply *psy,
++				   enum power_supply_property psp,
++				   union power_supply_propval *val)
++{
++	struct az01_power *p = power_supply_get_drvdata(psy);
++	int ret, mv;
++
++	ret = az01_power_read_mv(p, &mv);
++	if (ret)
++		return ret;
++
++	switch (psp) {
++	case POWER_SUPPLY_PROP_ONLINE:
++		val->intval = mv >= p->threshold_mv;
++		break;
++	case POWER_SUPPLY_PROP_VOLTAGE_NOW:
++		val->intval = mv * 1000;
++		break;
++	default:
++		return -EINVAL;
++	}
++
++	return 0;
++}
++
++static enum power_supply_property az01_power_properties[] = {
++	POWER_SUPPLY_PROP_ONLINE,
++	POWER_SUPPLY_PROP_VOLTAGE_NOW,
++};
++
++static const struct power_supply_desc az01_power_desc = {
++	.name		= "az01-ac-power",
++	.type		= POWER_SUPPLY_TYPE_MAINS,
++	.properties	= az01_power_properties,
++	.num_properties	= ARRAY_SIZE(az01_power_properties),
++	.get_property	= az01_power_get_property,
++};
++
++static void az01_power_stop_poll(void *data)
++{
++	cancel_delayed_work_sync(&((struct az01_power *)data)->poll);
++}
++
++static int az01_power_probe(struct platform_device *pdev)
++{
++	struct power_supply_config cfg = {};
++	struct device *dev = &pdev->dev;
++	struct az01_power *p;
++	int ret, mv;
++
++	p = devm_kzalloc(dev, sizeof(*p), GFP_KERNEL);
++	if (!p)
++		return -ENOMEM;
++
++	p->dev = dev;
++
++	/*
++	 * The DT node carries a bare io-channels = <&saradc 0> with no
++	 * io-channel-names, so this has to be fetched by index.
++	 */
++	p->chan = devm_iio_channel_get(dev, NULL);
++	if (IS_ERR(p->chan))
++		return dev_err_probe(dev, PTR_ERR(p->chan),
++				     "failed to get the DC-jack sense channel\n");
++
++	p->threshold_mv = AZ01_POWER_DEFAULT_THRESHOLD_MV;
++	device_property_read_u32(dev, "inmusic,online-threshold-mv",
++				 &p->threshold_mv);
++
++	p->divider = AZ01_POWER_DEFAULT_DIVIDER;
++	device_property_read_u32(dev, "inmusic,divider-ratio", &p->divider);
++	if (!p->divider)
++		return dev_err_probe(dev, -EINVAL,
++				     "inmusic,divider-ratio must not be zero\n");
++
++	cfg.of_node = dev->of_node;
++	cfg.drv_data = p;
++
++	p->psy = devm_power_supply_register(dev, &az01_power_desc, &cfg);
++	if (IS_ERR(p->psy))
++		return dev_err_probe(dev, PTR_ERR(p->psy),
++				     "failed to register the power supply\n");
++
++	ret = az01_power_read_mv(p, &mv);
++	if (ret)
++		return dev_err_probe(dev, ret,
++				     "failed to read the DC-jack sense channel\n");
++	p->online = mv >= p->threshold_mv;
++
++	dev_info(dev, "DC jack %s (%d mV, threshold %u mV)\n",
++		 p->online ? "connected" : "absent", mv, p->threshold_mv);
++
++	INIT_DELAYED_WORK(&p->poll, az01_power_poll);
++	ret = devm_add_action_or_reset(dev, az01_power_stop_poll, p);
++	if (ret)
++		return ret;
++	schedule_delayed_work(&p->poll, AZ01_POWER_POLL_INTERVAL);
++
++	return 0;
++}
++
++static const struct of_device_id az01_power_of_match[] = {
++	{ .compatible = "inmusic,az01-power" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, az01_power_of_match);
++
++static struct platform_driver az01_power_driver = {
++	.probe = az01_power_probe,
++	.driver = {
++		.name = "az01-power",
++		.of_match_table = az01_power_of_match,
++	},
++};
++module_platform_driver(az01_power_driver);
++
++MODULE_DESCRIPTION("inMusic AZ01 DC-jack power supply");
++MODULE_LICENSE("GPL");
+-- 
+2.43.0
+

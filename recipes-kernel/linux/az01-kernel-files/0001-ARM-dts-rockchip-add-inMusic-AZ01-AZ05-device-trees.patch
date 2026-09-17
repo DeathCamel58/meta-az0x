@@ -1,6 +1,6 @@
-From de9dd8e9373a2853eaddd438128cff49920065d5 Mon Sep 17 00:00:00 2001
+From e75303c1be940b8f5a2bfb39f6dd8ce1dffa58d1 Mon Sep 17 00:00:00 2001
 From: az0x <dev@localhost>
-Date: Thu, 17 Sep 2026 13:27:27 -0400
+Date: Thu, 17 Sep 2026 14:48:23 -0400
 Subject: [PATCH] ARM: dts: rockchip: add inMusic AZ01/AZ05 device trees
 
 Device trees for inMusic's AZ01 and AZ05 boards (RK3288), covering the four
@@ -23,23 +23,24 @@ under 20k.
 Every one of the 31 trees was verified to rebuild to a DTB semantically
 identical to the vendor's original: all 14040 nodes present, no node
 differing, none extra, compared phandle-aware so that dtc's renumbering does
-not mask a real difference. They are not byte-identical, because nodes are
-emitted in sorted rather than original order, which shifts phandle numbering
-and the string table; /aliases pins mmc, i2c, serial and spi numbering, so
-ordering carries no functional meaning here.
+not mask a real difference.
+
+rk3288-az01-jp11-fitted.dtsi is the exception to "faithful copy". The shipped
+DTB is a template that u-boot edits before boot; on a real Prime GO it changes
+exactly four status properties, enabling the ILI2117 touchscreen actually
+fitted (the template enables an ILI2116), the bootloader framebuffer handover,
+and one USB controller. A kernel booted on the unmodified template has no
+working touchscreen, so those four are applied statically. That file also
+carries the measured DC-jack threshold for the az01-power driver.
 
 Not upstreamable as-is: no labels (the decompiler discards them, so phandle
 references use dtc path syntax), and the root keeps the vendor's 2/2
-address/size cells where mainline rk3288.dtsi uses 1/1. The vendor tree is a
-long-lived fork whose node names froze at mainline <= v5.5 (dwmmc@ not mmc@,
-mipi@ not dsi@) while its content tracks 6.6, so it cannot simply include
-rk3288.dtsi.
+address/size cells where mainline rk3288.dtsi uses 1/1.
+
 Upstream-Status: Inappropriate [vendor board support]
 
 These describe inMusic product hardware and are reconstructed from shipped
-binaries rather than authored upstream; they carry no labels and keep the
-vendor's root address/size cells, so they are not in upstreamable form.
-
+binaries rather than authored upstream.
 ---
  arch/arm/boot/dts/rockchip/Makefile           |   31 +
  .../dts/rockchip/rk3288-az01-acv5s-base.dtsi  |  603 ++++++
@@ -71,7 +72,8 @@ vendor's root address/size cells, so they are not in upstreamable form.
  .../boot/dts/rockchip/rk3288-az01-jp08.dts    |   10 +
  .../dts/rockchip/rk3288-az01-jp11-base.dtsi   |  596 ++++++
  .../boot/dts/rockchip/rk3288-az01-jp11-c.dts  |   26 +
- .../boot/dts/rockchip/rk3288-az01-jp11.dts    |    7 +
+ .../dts/rockchip/rk3288-az01-jp11-fitted.dtsi |   57 +
+ .../boot/dts/rockchip/rk3288-az01-jp11.dts    |   10 +
  .../dts/rockchip/rk3288-az01-jp13-base.dtsi   |  612 ++++++
  .../boot/dts/rockchip/rk3288-az01-jp13-c.dts  |   27 +
  .../boot/dts/rockchip/rk3288-az01-jp13.dts    |    8 +
@@ -105,7 +107,7 @@ vendor's root address/size cells, so they are not in upstreamable form.
  .../boot/dts/rockchip/rk3288-az05-nh08.dts    |    4 +
  .../dts/rockchip/rk3288-az05-opt-acva2.dtsi   |   22 +
  arch/arm/boot/dts/rockchip/rk3288-az05.dtsi   | 1905 +++++++++++++++++
- 64 files changed, 14492 insertions(+)
+ 65 files changed, 14552 insertions(+)
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-acv5s-base.dtsi
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-acv5s.dts
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi
@@ -135,6 +137,7 @@ vendor's root address/size cells, so they are not in upstreamable form.
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-jp08.dts
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-jp11-base.dtsi
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-jp11-c.dts
+ create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-jp11-fitted.dtsi
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-jp11.dts
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-jp13-base.dtsi
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az01-jp13-c.dts
@@ -6916,12 +6919,75 @@ index 0000000..32e5491
 +		};
 +	};
 +};
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-fitted.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-fitted.dtsi
+new file mode 100644
+index 0000000..75dd88c
+--- /dev/null
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-fitted.dtsi
+@@ -0,0 +1,57 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++/*
++ * What u-boot resolves on a JP11 at boot, applied statically.
++ *
++ * The DTB inMusic ships is a TEMPLATE: u-boot edits it before handing it to
++ * the kernel, presumably after probing which parts are actually fitted.
++ * Comparing all 59 status properties live-vs-shipped on a real Prime GO, it
++ * changes exactly these four. Our kernel gets the tree as-is, so without this
++ * overlay the touchscreen and one USB controller are simply dead.
++ *
++ * Measured, not guessed - see docs/az01-hardware-facts.md.
++ *
++ * HAND-MAINTAINED: build-layers.py does not generate this file. If the layered
++ * tree is regenerated, re-add this file and its #include in the board .dts.
++ */
++
++/ {
++	/*
++	 * This unit carries an ILI2117 at 0x26, not the ILI2116 at 0x41 the
++	 * shipped template enables:
++	 *   ili2117 4-0026: ILI2117 vendor 0x00 firmware version 5.0
++	 * Mainline ili210x.c already drives it (ilitek,ili2117 -> ili211x_chip),
++	 * so this needs no vendor driver, only CONFIG_TOUCHSCREEN_ILI210X.
++	 */
++	i2c@ff160000 {
++		ili2116@41 {
++			status = "disabled";
++		};
++
++		ili2117@26 {
++			status = "okay";
++		};
++	};
++
++	/* u-boot has already lit the VOP ("enabled by bootloader") and hands
++	 * over its framebuffer reservation. */
++	reserved-memory {
++		framebuffer {
++			status = "okay";
++		};
++	};
++
++	usb@ff580000 {
++		status = "okay";
++	};
++
++	/*
++	 * Measured on this unit rather than left to the driver's defaults:
++	 * the DC jack reads 18.64 V present / 15.82 V absent, and the absent
++	 * reading is the battery terminal, so it climbs with charge. 17.5 V
++	 * clears a full 4S pack (16.8 V) and stays under the adapter.
++	 */
++	ac-power {
++		inmusic,online-threshold-mv = <17500>;
++		inmusic,divider-ratio = <16>;
++	};
++};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp11.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11.dts
 new file mode 100644
-index 0000000..51e461a
+index 0000000..6f98ab2
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11.dts
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,10 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -6929,6 +6995,9 @@ index 0000000..51e461a
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
 +#include "rk3288-az01-touch-ili2116.dtsi"
++
++/* must come last: it overrides status properties set above */
++#include "rk3288-az01-jp11-fitted.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-base.dtsi
 new file mode 100644
 index 0000000..de17737
