@@ -45,9 +45,14 @@ KERNEL_DEVICETREE = ""
 AZ0X_ESSENTIAL_MODULES ?= "kernel-modules"
 AZ0X_ESSENTIAL_MODULES:az01-ksrc = ""
 
-# Milestone D1: source kernel, but keep the VENDOR device trees. This isolates
-# "does mainline 6.6 boot this SoC" from "is our reconstructed DTS right" -
-# two independent failure modes that must not be coupled on a board whose only
-# feedback channel is a UART. Shipping all 8 vendor dtbs also means ${fdtfile}
-# cannot miss. D2 flips these two lines to build the dtb from source.
-AZ0X_DTB_INSTALL:az01-ksrc = "az01-vendor-devicetree"
+# D1 kept the VENDOR device trees, to isolate "does mainline 6.6 boot this SoC"
+# from "is our reconstructed DTS right". That worked, so D2 now builds the dtb
+# from source: KERNEL_DEVICETREE names it, the kernel's own kernel-devicetree
+# package ships it, and az01-vendor-devicetree steps aside.
+#
+# The name is not a guess - the unit's u-boot reports fdtfile=rk3288-az01-jp11.dtb,
+# and boot.scr does `load ... ${fdtfile} || exit`, so a wrong name is a silent
+# non-boot. Set AZ0X_DTB_INSTALL back to "az01-vendor-devicetree" (and
+# KERNEL_DEVICETREE to "") to fall back to the vendor blobs.
+AZ0X_DTB_INSTALL:az01-ksrc = ""
+KERNEL_DEVICETREE:az01-ksrc = "rockchip/${AZ0X_BOARD_DTB}.dtb"

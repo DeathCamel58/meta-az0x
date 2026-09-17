@@ -67,7 +67,9 @@ AZ0X_KERNEL_INSTALL:az04 = "kernel-modules"
 # anything to satisfy 'kernel-devicetree'". The dtbs come from
 # AZ0X_DTB_INSTALL (az01-vendor-devicetree) at this milestone instead.
 # D2 builds the dtb from source and flips both variables together.
-AZ0X_KERNEL_INSTALL:az01-ksrc = "kernel-image"
+# D2 onwards: KERNEL_DEVICETREE is non-empty, so poky DOES inherit
+# kernel-devicetree.bbclass and the package exists again.
+AZ0X_KERNEL_INSTALL:az01-ksrc = "kernel-image kernel-devicetree"
 
 # Which recipe supplies /boot/*.dtb. The prebuilt kernel ships them itself; a
 # source kernel builds its own; and there is a third case - source kernel but
