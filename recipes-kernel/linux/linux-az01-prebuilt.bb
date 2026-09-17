@@ -33,7 +33,7 @@ az0x_install_boot() {
     install -m 0644 ${S}/boot/zImage-${KERNEL_VERSION} ${D}/boot/
     ln -sf zImage-${KERNEL_VERSION} ${D}/boot/${KERNEL_IMAGETYPE}
     install -m 0644 ${S}/boot/*.dtb ${D}/boot/
-    install -m 0644 ${S}/boot/boot.scr.uimg ${D}/boot/
+    # boot.scr.uimg now comes from the az01-bootscript recipe.
 }
 
 FILES:kernel-image = "/boot/zImage*"

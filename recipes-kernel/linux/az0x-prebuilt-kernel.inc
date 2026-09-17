@@ -35,22 +35,22 @@ do_compile[noexec] = "1"
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 
-az0x_install_modules_firmware() {
+az0x_install_modules() {
     # Full module tree, verbatim. depmod has already been run by the vendor
     # and modules.dep uses relative paths, so it stays valid as-is. Do NOT
     # regenerate it - we have no matching System.map.
     install -d ${D}${nonarch_base_libdir}/modules
     cp -a ${S}/lib/modules/${KERNEL_VERSION} ${D}${nonarch_base_libdir}/modules/
-
-    # Firmware blobs, verbatim - board-tuned NVRAM/patchram that upstream
-    # linux-firmware does not carry. See each recipe's notes.
-    install -d ${D}${nonarch_base_libdir}/firmware
-    cp -a ${S}/lib/firmware/. ${D}${nonarch_base_libdir}/firmware/
 }
+
+# NOTE: /lib/firmware and /boot/boot.scr.uimg used to be installed here. They
+# moved to the standalone az0x-firmware and az01-bootscript recipes, because
+# neither is a kernel artifact and the device needs both regardless of which
+# kernel provider is selected. See AZ0X_KERNEL_PROVIDER.
 
 do_install() {
     az0x_install_boot
-    az0x_install_modules_firmware
+    az0x_install_modules
 
     # cp -a above preserves the OWNERSHIP of the staged vendor files. Those
     # come out of a debugfs rdump, which cannot chown, so they carry the
@@ -104,11 +104,10 @@ AZ0X_MODULE_RPROVIDES = "${@az0x_module_rprovides(d)}"
 # not have is a hard "Nothing RPROVIDES" failure instead of a soft miss.
 PACKAGES_DYNAMIC += "^kernel-module-.*"
 
-PACKAGES = "kernel-image kernel-devicetree kernel-modules az0x-firmware ${PN}-dbg ${PN}"
+PACKAGES = "kernel-image kernel-devicetree kernel-modules ${PN}-dbg ${PN}"
 
-FILES:kernel-devicetree = "/boot/*.dtb /boot/*.dtbo /boot/boot.scr.uimg /boot/*.fit"
+FILES:kernel-devicetree = "/boot/*.dtb /boot/*.dtbo /boot/*.fit"
 FILES:kernel-modules = "${nonarch_base_libdir}/modules"
-FILES:az0x-firmware = "${nonarch_base_libdir}/firmware"
 
 # Satisfy anything that runtime-depends on the names a real kernel recipe
 # would have produced.
@@ -122,4 +121,3 @@ AZ0X_INSANE_SKIP = "arch ldflags already-stripped buildpaths"
 INSANE_SKIP:kernel-image += "${AZ0X_INSANE_SKIP}"
 INSANE_SKIP:kernel-devicetree += "${AZ0X_INSANE_SKIP}"
 INSANE_SKIP:kernel-modules += "${AZ0X_INSANE_SKIP} debug-files staticdev"
-INSANE_SKIP:az0x-firmware += "${AZ0X_INSANE_SKIP}"

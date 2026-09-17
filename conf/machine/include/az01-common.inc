@@ -41,14 +41,8 @@ AZ0X_EXT4_INODE_RATIO = "4096"
 DEFAULTTUNE = "cortexa17thf-neon-vfpv4"
 
 # --- Kernel ----------------------------------------------------------------
-# Prebuilt-only. linux-az01-prebuilt PROVIDES virtual/kernel but has no
-# do_compile; it just stages the vendor artifacts for whichever board is set.
-PREFERRED_PROVIDER_virtual/kernel = "linux-az01-prebuilt"
-KERNEL_IMAGETYPE = "zImage"
-
-# Device trees are supplied prebuilt, so the usual KERNEL_DEVICETREE
-# build-from-source path is unused. Listed for documentation only.
-KERNEL_DEVICETREE = ""
+# Provider is switchable; see the include. Default is the vendor prebuilt.
+require conf/machine/include/az01-kernel.inc
 
 # --- Bootloader ------------------------------------------------------------
 # Explicitly none. The vendor's u-boot, trust and loader partitions are left
@@ -73,7 +67,7 @@ SERIAL_CONSOLES = "115200;ttyS2"
 
 MACHINE_FEATURES = "usbhost usbgadget alsa screen ext2 rtc"
 
-MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "kernel-modules"
+MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "${AZ0X_ESSENTIAL_MODULES}"
 
 # --- X11 ---------------------------------------------------------------------
 # meta-rockchip's rockchip-defaults.inc lists xserver-xorg-xvfb in XSERVER, but

@@ -57,6 +57,24 @@ AZ0X_KERNEL_INSTALL:az01 = " \
 "
 AZ0X_KERNEL_INSTALL:az04 = "kernel-modules"
 
+# Source-kernel path: no modules yet. A from-source multi_v7_defconfig builds
+# far more than the vendor's 76, and the rootfs is a fixed 492 MiB. Console,
+# eMMC and ext4 are all built in, so this boots without them. Modules come back
+# once the board is up and the config has been trimmed.
+# NOTE: no kernel-devicetree here. On the source path D1 sets
+# KERNEL_DEVICETREE = "" so that poky never inherits kernel-devicetree.bbclass,
+# and the package therefore does not exist - opkg fails with "Couldn't find
+# anything to satisfy 'kernel-devicetree'". The dtbs come from
+# AZ0X_DTB_INSTALL (az01-vendor-devicetree) at this milestone instead.
+# D2 builds the dtb from source and flips both variables together.
+AZ0X_KERNEL_INSTALL:az01-ksrc = "kernel-image"
+
+# Which recipe supplies /boot/*.dtb. The prebuilt kernel ships them itself; a
+# source kernel builds its own; and there is a third case - source kernel but
+# still using the vendor dtbs, which is how the first source-kernel milestone
+# isolates "does mainline boot this SoC" from "is our DTS right".
+AZ0X_DTB_INSTALL ?= ""
+
 # --- Baseline userspace shared by both flavors -----------------------------
 # NOTE: this deliberately does NOT use CORE_IMAGE_BASE_INSTALL. That pulls in
 # packagegroup-base-extended, whose wifi/bluetooth packagegroups RRECOMMEND
@@ -80,3 +98,33 @@ AZ0X_BASE_INSTALL = " \
 # all, and az04 needs the ARM Mali CSF firmware. Neither has an upstream
 # package that will actually bring the hardware up.
 AZ0X_FIRMWARE_INSTALL = "az0x-firmware"
+
+# The vendor u-boot boot script. Load-bearing on az01: u-boot scans the rootfs
+# partition for /boot/boot.scr.uimg and that script is what loads the kernel
+# and dtb. Supplied by its own recipe rather than the kernel one, since a
+# from-source kernel build does not produce it.
+AZ0X_BOOTSCRIPT_INSTALL ?= ""
+AZ0X_BOOTSCRIPT_INSTALL:az01 = "az01-bootscript"
+
+# --- Guard rails ------------------------------------------------------------
+python () {
+    prov = d.getVar('AZ0X_KERNEL_PROVIDER') or 'prebuilt'
+    valid = ('prebuilt', 'yocto', 'yocto-rt')
+    if prov not in valid:
+        raise bb.parse.SkipRecipe(
+            "AZ0X_KERNEL_PROVIDER is '%s'; expected one of %s"
+            % (prov, ', '.join(valid)))
+
+    if not (d.getVar('AZ0X_KERNEL_PN') or ''):
+        raise bb.parse.SkipRecipe(
+            "AZ0X_KERNEL_PROVIDER '%s' did not map to a kernel recipe" % prov)
+
+    # az01-mpc's vendor kernel is 6.18.26; linux-yocto 6.6 would be a silent
+    # four-year downgrade, not an upgrade. Make it an explicit decision.
+    if (d.getVar('MACHINE') == 'az01-mpc' and prov != 'prebuilt'
+            and d.getVar('AZ0X_KERNEL_ALLOW_DOWNGRADE') != '1'):
+        raise bb.parse.SkipRecipe(
+            "az01-mpc ships vendor kernel 6.18.26; AZ0X_KERNEL_PROVIDER='%s' "
+            "would build 6.6 instead. Set AZ0X_KERNEL_ALLOW_DOWNGRADE = \"1\" "
+            "if that is genuinely what you want." % prov)
+}
