@@ -50,6 +50,25 @@ SRC_URI:append:az01 = " file://0002-power-supply-add-inMusic-AZ01-DC-jack-driver
 # finish binding until the panel registers, so there is no card0 at all.
 SRC_URI:append:az01 = " file://0003-drm-panel-add-URT-UMOH-9522MD-T.patch"
 
+# Audio. Two drivers, because the hardware is split that way: a codec with no
+# control interface (master clock plus enable/mute/reset GPIOs) and a machine
+# driver joining it to the Rockchip I2S controller.
+#
+# simple-audio-card cannot do this. The vendor device tree names both ends with
+# flat inmusic,cpu / inmusic,codec phandles rather than the subnode form that
+# binding requires, and reshaping the DT would cost the round-trip fidelity we
+# verified across the whole board family. Nothing in-tree covers the codec
+# either - max98357a is the closest and has no clock or reset handling.
+SRC_URI:append:az01 = " file://0004-ASoC-codecs-add-the-inMusic-AZ0x-audio-codec.patch"
+SRC_URI:append:az01 = " file://0005-ASoC-rockchip-add-the-inMusic-AZ0x-machine-driver.patch"
+
+# Without this the audio above builds, registers a card and streams - into
+# nothing. The vendor device tree sets slew-rate on the I2S pin configs,
+# mainline's rockchip pinctrl implements slew rate for no SoC at all, and one
+# rejected parameter makes the pinctrl core revert the entire state, mux
+# included. The pins never reach the I2S function.
+SRC_URI:append:az01 = " file://0006-pinctrl-rockchip-accept-and-ignore-slew-rate.patch"
+
 # CONFIG_EXTRA_FIRMWARE reads from ${S}/firmware/, so the blobs have to be in
 # the kernel tree before configure. See the note in az01-base.cfg for why they
 # are embedded rather than loaded from the rootfs.

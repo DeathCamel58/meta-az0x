@@ -1,0 +1,310 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: az0x <dev@localhost>
+Date: Fri, 18 Sep 2026 12:23:52 -0400
+Subject: [PATCH 5/6] ASoC: rockchip: add the inMusic AZ0x machine driver
+
+Wires the RK3288 I2S controller to the board DAC on inMusic AZ0x boards.
+
+This cannot be simple-audio-card: the vendor device tree names both ends with
+flat inmusic,cpu and inmusic,codec phandles rather than the
+simple-audio-card,cpu/codec subnodes that binding requires. Reshaping the
+device tree was the alternative, but our device trees are verified to rebuild
+into blobs semantically identical to the vendor's, and that property is worth
+more than the hundred lines this driver costs.
+
+The clksel GPIO pair selects the DAC's master-clock divider. Both lines are
+low during playback on a Prime GO and 44100 is the only rate the card accepts,
+so there is no encoding table to apply - the other combinations belong to
+boards with more than one rate and are not known. They are left low and the
+codec advertises the one rate it supports.
+
+The card is named from inmusic,product-code in the root node, matching the
+vendor, which is what shows up as "card 1: JP11" in /proc/asound.
+
+Upstream-Status: Inappropriate [vendor board support]
+---
+ sound/soc/rockchip/Kconfig         |  10 ++
+ sound/soc/rockchip/Makefile        |   2 +
+ sound/soc/rockchip/rockchip_az0x.c | 237 +++++++++++++++++++++++++++++
+ 3 files changed, 249 insertions(+)
+ create mode 100644 sound/soc/rockchip/rockchip_az0x.c
+
+diff --git a/sound/soc/rockchip/Kconfig b/sound/soc/rockchip/Kconfig
+index f98a2fa85edd..ad545b67d090 100644
+--- a/sound/soc/rockchip/Kconfig
++++ b/sound/soc/rockchip/Kconfig
+@@ -90,3 +90,13 @@ config SND_SOC_RK3399_GRU_SOUND
+ 	help
+ 	  Say Y or M here if you want to add support multiple codecs for SoC
+ 	  audio on Rockchip RK3399 GRU boards.
++
++config SND_SOC_ROCKCHIP_AZ0X
++	tristate "ASoC support for inMusic AZ0x boards"
++	depends on SND_SOC_ROCKCHIP && GPIOLIB
++	select SND_SOC_ROCKCHIP_I2S
++	select SND_SOC_AZ0X_AUDIO_CODEC
++	help
++	  Say Y or M here if you want to add support for SoC audio on inMusic
++	  AZ0x boards (Denon DJ, Numark, Rane, Akai on RK3288), which pair the
++	  Rockchip I2S controller with a control-interface-less DAC.
+diff --git a/sound/soc/rockchip/Makefile b/sound/soc/rockchip/Makefile
+index 30c57c0d7660..586c03d7b0ec 100644
+--- a/sound/soc/rockchip/Makefile
++++ b/sound/soc/rockchip/Makefile
+@@ -10,11 +10,13 @@ obj-$(CONFIG_SND_SOC_ROCKCHIP_PDM) += snd-soc-rockchip-pdm.o
+ obj-$(CONFIG_SND_SOC_ROCKCHIP_SPDIF) += snd-soc-rockchip-spdif.o
+ obj-$(CONFIG_SND_SOC_ROCKCHIP_I2S_TDM) += snd-soc-rockchip-i2s-tdm.o
+ 
++snd-soc-rockchip-az0x-objs := rockchip_az0x.o
+ snd-soc-rockchip-max98090-objs := rockchip_max98090.o
+ snd-soc-rockchip-rt5645-objs := rockchip_rt5645.o
+ snd-soc-rk3288-hdmi-analog-objs := rk3288_hdmi_analog.o
+ snd-soc-rk3399-gru-sound-objs := rk3399_gru_sound.o
+ 
++obj-$(CONFIG_SND_SOC_ROCKCHIP_AZ0X) += snd-soc-rockchip-az0x.o
+ obj-$(CONFIG_SND_SOC_ROCKCHIP_MAX98090) += snd-soc-rockchip-max98090.o
+ obj-$(CONFIG_SND_SOC_ROCKCHIP_RT5645) += snd-soc-rockchip-rt5645.o
+ obj-$(CONFIG_SND_SOC_RK3288_HDMI_ANALOG) += snd-soc-rk3288-hdmi-analog.o
+diff --git a/sound/soc/rockchip/rockchip_az0x.c b/sound/soc/rockchip/rockchip_az0x.c
+new file mode 100644
+index 000000000000..5ea40a3169c7
+--- /dev/null
++++ b/sound/soc/rockchip/rockchip_az0x.c
+@@ -0,0 +1,237 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * ASoC machine driver for inMusic AZ0x boards (Denon DJ, Numark, Rane, Akai)
++ * on RK3288: the Rockchip I2S controller wired to the board's DAC.
++ *
++ * The device tree names both ends directly rather than using the
++ * simple-audio-card subnode form, so this cannot be simple-audio-card:
++ *
++ *	sound {
++ *		compatible = "inmusic,jp11-audio";
++ *		inmusic,cpu = <&i2s>;
++ *		inmusic,codec = <&sound_codec>;
++ *		clksel0-gpios = <&gpio2 3 GPIO_ACTIVE_HIGH>;
++ *		clksel1-gpios = <&gpio2 4 GPIO_ACTIVE_HIGH>;
++ *	};
++ *
++ * The DAC is the clock PROVIDER, not the consumer. The SoC feeds it MCLK
++ * (SCLK_I2S0_OUT at 256fs) and the DAC divides that down to produce BCLK and
++ * LRCLK - which is precisely why the clksel pair exists: it selects the divider,
++ * i.e. the sample rate the DAC will generate. Boards that can be switched the
++ * other way carry an inmusic,master-slave-gpios property; when it is absent the
++ * codec is always the provider.
++ */
++
++#include <linux/gpio/consumer.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/platform_device.h>
++#include <linux/pinctrl/consumer.h>
++#include <sound/pcm_params.h>
++#include <sound/soc.h>
++
++struct az0x_card {
++	struct snd_soc_card card;
++	struct snd_soc_dai_link link;
++	struct snd_soc_dai_link_component cpu;
++	struct snd_soc_dai_link_component codec;
++	struct snd_soc_dai_link_component platform;
++	struct gpio_desc *clksel0;
++	struct gpio_desc *clksel1;
++};
++
++/*
++ * The DAC's master-clock divider select, read out of the vendor machine
++ * driver's hw_params. Board support for any given rate is a separate question -
++ * the codec's per-board table decides that - but the encoding is shared.
++ */
++static int az0x_clksel(unsigned int rate)
++{
++	switch (rate) {
++	case 44100: return 0;
++	case 48000: return 1;
++	case 88200: return 2;
++	case 96000: return 3;
++	default:    return -EINVAL;
++	}
++}
++
++static int az0x_hw_params(struct snd_pcm_substream *substream,
++			  struct snd_pcm_hw_params *params)
++{
++	struct snd_soc_pcm_runtime *rtd = snd_soc_substream_to_rtd(substream);
++	struct snd_soc_dai *cpu_dai = snd_soc_rtd_to_cpu(rtd, 0);
++	struct snd_soc_dai *codec_dai = snd_soc_rtd_to_codec(rtd, 0);
++	struct az0x_card *priv = snd_soc_card_get_drvdata(rtd->card);
++	unsigned int rate = params_rate(params);
++	int sel, ret;
++
++	/* 256fs: 44100 * 256 = 11289600. The vendor sets both ends. */
++	ret = snd_soc_dai_set_sysclk(codec_dai, 0, rate * 256, SND_SOC_CLOCK_IN);
++	if (ret && ret != -ENOTSUPP)
++		return ret;
++
++	ret = snd_soc_dai_set_sysclk(cpu_dai, 0, rate * 256, SND_SOC_CLOCK_OUT);
++	if (ret && ret != -ENOTSUPP)
++		return ret;
++
++	sel = az0x_clksel(rate);
++	if (sel < 0) {
++		dev_err(rtd->card->dev, "no clksel encoding for %u Hz\n", rate);
++		return sel;
++	}
++
++	gpiod_set_value_cansleep(priv->clksel0, sel & 1);
++	gpiod_set_value_cansleep(priv->clksel1, sel >> 1);
++
++	return 0;
++}
++
++static const struct snd_soc_ops az0x_ops = {
++	.hw_params = az0x_hw_params,
++};
++
++/*
++ * Which end drives BCLK/LRCLK. The vendor reads an optional GPIO: absent, or
++ * reading non-zero, means the codec provides both; reading zero means it
++ * consumes them. Absent is the common case and covers JP11.
++ */
++static unsigned int az0x_clock_provider(struct device *dev)
++{
++	struct gpio_desc *gpio;
++	int val;
++
++	gpio = devm_gpiod_get_optional(dev, "inmusic,master-slave", GPIOD_IN);
++	if (IS_ERR_OR_NULL(gpio))
++		return SND_SOC_DAIFMT_CBP_CFP;
++
++	val = gpiod_get_value_cansleep(gpio);
++	dev_dbg(dev, "master-slave gpio=%d\n", val);
++
++	return val ? SND_SOC_DAIFMT_CBP_CFP : SND_SOC_DAIFMT_CBC_CFC;
++}
++
++static int az0x_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *np = dev->of_node;
++	struct az0x_card *priv;
++	const char *product = NULL;
++	int ret;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++
++	priv->cpu.of_node = of_parse_phandle(np, "inmusic,cpu", 0);
++	if (!priv->cpu.of_node)
++		return dev_err_probe(dev, -EINVAL, "missing inmusic,cpu\n");
++
++	priv->codec.of_node = of_parse_phandle(np, "inmusic,codec", 0);
++	if (!priv->codec.of_node) {
++		ret = dev_err_probe(dev, -EINVAL, "missing inmusic,codec\n");
++		goto put_cpu;
++	}
++
++	/* The I2S controller is also the DMA back end. */
++	priv->platform.of_node = priv->cpu.of_node;
++	priv->codec.dai_name = "az0x-hifi";
++
++	priv->link.name		 = "az0x-audio";
++	priv->link.stream_name	 = "az0x-audio";
++	priv->link.cpus		 = &priv->cpu;
++	priv->link.num_cpus	 = 1;
++	priv->link.codecs	 = &priv->codec;
++	priv->link.num_codecs	 = 1;
++	priv->link.platforms	 = &priv->platform;
++	priv->link.num_platforms = 1;
++	priv->link.ops		 = &az0x_ops;
++	priv->link.dai_fmt	 = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
++				   az0x_clock_provider(dev);
++
++	priv->card.dev		= dev;
++	priv->card.owner	= THIS_MODULE;
++	priv->card.dai_link	= &priv->link;
++	priv->card.num_links	= 1;
++
++	/*
++	 * The vendor names the card after the product code in the root node,
++	 * which is what shows up as "card 1: JP11" in /proc/asound.
++	 */
++	of_property_read_string(of_root, "inmusic,product-code", &product);
++	priv->card.name = product ?: "AZ0X";
++
++	priv->clksel0 = devm_gpiod_get_optional(dev, "clksel0", GPIOD_OUT_LOW);
++	if (IS_ERR(priv->clksel0)) {
++		ret = dev_err_probe(dev, PTR_ERR(priv->clksel0), "clksel0\n");
++		goto put_codec;
++	}
++
++	priv->clksel1 = devm_gpiod_get_optional(dev, "clksel1", GPIOD_OUT_LOW);
++	if (IS_ERR(priv->clksel1)) {
++		ret = dev_err_probe(dev, PTR_ERR(priv->clksel1), "clksel1\n");
++		goto put_codec;
++	}
++
++	/*
++	 * The vendor selects a pinctrl state matching the clock direction.
++	 * Most boards, JP11 included, only declare "default", so a missing
++	 * state is not an error.
++	 */
++	if ((priv->link.dai_fmt & SND_SOC_DAIFMT_CLOCK_PROVIDER_MASK) ==
++	    SND_SOC_DAIFMT_CBP_CFP)
++		pinctrl_select_default_state(dev);
++
++	snd_soc_card_set_drvdata(&priv->card, priv);
++
++	ret = devm_snd_soc_register_card(dev, &priv->card);
++	if (ret) {
++		dev_err_probe(dev, ret, "cannot register card\n");
++		goto put_codec;
++	}
++
++	return 0;
++
++put_codec:
++	of_node_put(priv->codec.of_node);
++put_cpu:
++	of_node_put(priv->cpu.of_node);
++	return ret;
++}
++
++static const struct of_device_id az0x_of_match[] = {
++	{ .compatible = "inmusic,acva-audio" },
++	{ .compatible = "inmusic,acvm-audio" },
++	{ .compatible = "inmusic,acvr-audio" },
++	{ .compatible = "inmusic,hg02-audio" },
++	{ .compatible = "inmusic,hg03-audio" },
++	{ .compatible = "inmusic,hg04-audio" },
++	{ .compatible = "inmusic,hg06-audio" },
++	{ .compatible = "inmusic,hv01-audio" },
++	{ .compatible = "inmusic,jc16-audio" },
++	{ .compatible = "inmusic,jp07-audio" },
++	{ .compatible = "inmusic,jp08-audio" },
++	{ .compatible = "inmusic,jp11-audio" },
++	{ .compatible = "inmusic,jp13-audio" },
++	{ .compatible = "inmusic,jp14-audio" },
++	{ .compatible = "inmusic,jp20-audio" },
++	{ .compatible = "inmusic,jp21-audio" },
++	{ .compatible = "inmusic,mg01-audio" },
++	{ .compatible = "inmusic,nh08-audio" },
++	{ .compatible = "inmusic,nh10-audio" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, az0x_of_match);
++
++static struct platform_driver az0x_driver = {
++	.driver = {
++		.name		= "rockchip-az0x",
++		.of_match_table	= az0x_of_match,
++		.pm		= &snd_soc_pm_ops,
++	},
++	.probe = az0x_probe,
++};
++module_platform_driver(az0x_driver);
++
++MODULE_DESCRIPTION("inMusic AZ0x Rockchip machine ASoC driver");
++MODULE_LICENSE("GPL");

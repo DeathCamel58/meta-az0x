@@ -1,0 +1,56 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: az0x <dev@localhost>
+Date: Fri, 18 Sep 2026 12:43:13 -0400
+Subject: [PATCH 6/6] pinctrl: rockchip: accept and ignore slew-rate instead of
+ failing
+
+No Rockchip SoC implements slew rate in this driver - the string does not
+appear in it at all - so rockchip_pinconf_set() falls through to the default
+case and returns -ENOTSUPP for any pin config that asks for it.
+
+That is worse than it sounds. pinctrl_commit_state() treats one rejected
+parameter as failure of the entire state and reverts it, so a group that also
+sets a mux loses the mux too. On inMusic AZ0x boards the vendor device tree
+puts slew-rate on the I2S pin configs, and the result is:
+
+  rockchip-pinctrl pinctrl: pin_config_set op failed for pin 184
+  rockchip-i2s ff890000.i2s: Error applying setting, reverse things back
+
+leaving "current state: none" in pinctrl-handles. The sound card still
+registers and streams, the DMA runs and the codec GPIOs toggle, but the pins
+are never switched to the I2S function, so nothing reaches the DAC - a silent
+failure that looks like working audio from userspace.
+
+Accept the parameter and ignore it. The bias and drive-strength settings in
+the same group then apply, and the mux survives. Ignoring is what would happen
+anyway if the property were simply deleted from the device tree; this keeps
+the device tree an honest description of the board instead.
+
+Upstream-Status: Inappropriate [workaround for an unimplemented feature]
+---
+ drivers/pinctrl/pinctrl-rockchip.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/drivers/pinctrl/pinctrl-rockchip.c b/drivers/pinctrl/pinctrl-rockchip.c
+index 0c2382480c24..44d66bda4d82 100644
+--- a/drivers/pinctrl/pinctrl-rockchip.c
++++ b/drivers/pinctrl/pinctrl-rockchip.c
+@@ -2914,6 +2914,18 @@ static int rockchip_pinconf_set(struct pinctrl_dev *pctldev, unsigned int pin,
+ 			if (rc < 0)
+ 				return rc;
+ 			break;
++		case PIN_CONFIG_SLEW_RATE:
++			/*
++			 * Not implemented for any Rockchip SoC, but accept it
++			 * rather than failing: pinctrl_commit_state() reverts
++			 * the *whole* state when one parameter is rejected, so
++			 * returning -ENOTSUPP here throws away the mux and the
++			 * settings that are supported along with it.
++			 */
++			dev_dbg(info->dev,
++				"slew-rate not supported, ignoring for pin %d\n",
++				pin);
++			break;
+ 		default:
+ 			return -ENOTSUPP;
+ 			break;
