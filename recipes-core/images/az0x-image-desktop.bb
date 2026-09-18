@@ -67,7 +67,10 @@ IMAGE_FEATURES += "${AZ0X_DESKTOP_FEATURES}"
 # X startup and matches the touch transform to it. Board-specific; see each
 # conf/machine/*.conf. Harmless on boards where it is unset - it installs
 # nothing rather than guess.
-AZ0X_DESKTOP_INSTALL_sato = "az0x-panel-rotation az0x-onscreen-keyboard"
+# connman-client gives connmanctl; the desktop already has the applet, but
+# there is no CLI without it. az0x-wifi-default seeds ConnMan so the radio
+# is enabled on a read-only rootfs where its own state cannot persist.
+AZ0X_DESKTOP_INSTALL_sato = "az0x-panel-rotation az0x-onscreen-keyboard connman-client az0x-wifi-default"
 
 AZ0X_DESKTOP_INSTALL_weston = " \
     wayland-utils \

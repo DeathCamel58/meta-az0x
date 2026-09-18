@@ -1,0 +1,14 @@
+[global]
+OfflineMode=false
+[WiFi]
+Enable=true
+Tethering=false
+Tethering.Freq=2412
+[Wired]
+Enable=true
+Tethering=false
+Tethering.Freq=2412
+[P2P]
+Enable=false
+Tethering=false
+Tethering.Freq=2412

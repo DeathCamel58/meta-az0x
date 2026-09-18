@@ -48,3 +48,16 @@ SRC_URI:append:az01 = " file://0002-power-supply-add-inMusic-AZ01-DC-jack-driver
 # display pipeline stays down: rockchip-drm is component-based and will not
 # finish binding until the panel registers, so there is no card0 at all.
 SRC_URI:append:az01 = " file://0003-drm-panel-add-URT-UMOH-9522MD-T.patch"
+
+# CONFIG_EXTRA_FIRMWARE reads from ${S}/firmware/, so the blobs have to be in
+# the kernel tree before configure. See the note in az01-base.cfg for why they
+# are embedded rather than loaded from the rootfs.
+do_configure:prepend:az01() {
+    if [ -d "${AZ0X_VENDOR_DIR}/${AZ0X_BOARD_DIR}/lib/firmware/brcm" ]; then
+        install -d ${S}/firmware/brcm
+        for f in brcmfmac43456-sdio.bin brcmfmac43456-sdio.txt; do
+            src="${AZ0X_VENDOR_DIR}/${AZ0X_BOARD_DIR}/lib/firmware/brcm/$f"
+            [ -f "$src" ] && install -m 0644 "$src" ${S}/firmware/brcm/
+        done
+    fi
+}
