@@ -30,3 +30,17 @@ do_install() {
 FILES:${PN} = "/boot/boot.scr.uimg"
 
 INSANE_SKIP:${PN} += "arch ldflags already-stripped buildpaths"
+
+# Not every az01 board ships a boot script. JC11S (Prime 4 Plus) boots a signed
+# FIT straight from its own kernel partition, so there is no boot.scr.uimg in
+# the vendor tree at all. Skip the recipe rather than fail parsing for every
+# machine: SRC_URI is checksummed at parse time, so a missing file is a hard
+# parse error even when nothing installs this package.
+python () {
+    import os
+    d_ = d.getVar('AZ0X_VENDOR_DIR') or ''
+    board = d.getVar('AZ0X_BOARD_DIR') or ''
+    if board and not os.path.exists(os.path.join(d_, board, 'boot', 'boot.scr.uimg')):
+        raise bb.parse.SkipRecipe(
+            "%s ships no boot/boot.scr.uimg; this board boots without one" % board)
+}

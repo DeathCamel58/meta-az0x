@@ -14,6 +14,7 @@ COMPATIBLE_MACHINE:az01-player = "az01-player"
 COMPATIBLE_MACHINE:az01-premium = "az01-premium"
 COMPATIBLE_MACHINE:az01-console = "az01-console"
 COMPATIBLE_MACHINE:az01-mpc = "az01-mpc"
+COMPATIBLE_MACHINE:az0x-signed = "az0x-signed"
 
 # Config fragment. multi_v7_defconfig (from rk3288.inc's KBUILD_DEFCONFIG) is
 # the base - that is exactly how tinker-board, the RK3288 reference board,

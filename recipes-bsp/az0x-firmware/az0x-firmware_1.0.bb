@@ -16,6 +16,13 @@ LICENSE = "Proprietary"
 LIC_FILES_CHKSUM:az01 = "file://lib/firmware/LICENCE.broadcom_bcm43xx;md5=3160c14df7228891b868060e1951dfbc"
 LIC_FILES_CHKSUM:az04 = "file://lib/firmware/LICENCE.mali_csffw;md5=e064aaec4d21ef856e1b76a6f5dc435f"
 
+# The signed-boot group ships no LICENCE file at all - no LICENCE.broadcom_bcm43xx
+# and no cypress/ directory, unlike the other az01 boards. The blobs are still
+# proprietary; with no licence text to point at, this anchors on a Broadcom
+# firmware descriptor purely so the checksum pins provenance and a silent
+# content change is caught.
+LIC_FILES_CHKSUM:az0x-signed = "file://lib/firmware/brcm/brcmfmac43456-sdio.txt;md5=5951b99b32067c4ff43d22af705fde16"
+
 # Same vendor-staging idiom as az0x-prebuilt-kernel.inc: resolve file:// against
 # the per-board vendor dir rather than the usual recipe files/ dirs.
 FILESPATH = "${AZ0X_VENDOR_DIR}/${AZ0X_BOARD_DIR}"

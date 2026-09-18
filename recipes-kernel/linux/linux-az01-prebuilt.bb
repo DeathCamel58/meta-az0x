@@ -46,6 +46,10 @@ do_deploy() {
     install -m 0644 ${S}/boot/zImage-${KERNEL_VERSION} ${DEPLOYDIR}/
     ln -sf zImage-${KERNEL_VERSION} ${DEPLOYDIR}/${KERNEL_IMAGETYPE}
     install -m 0644 ${S}/boot/*.dtb ${DEPLOYDIR}/
-    install -m 0644 ${S}/boot/boot.scr.uimg ${DEPLOYDIR}/
+    # Not every az01 board ships one: JC11S boots a signed FIT straight from
+    # the kernel partition and has no boot script in the rootfs.
+    if [ -f ${S}/boot/boot.scr.uimg ]; then
+        install -m 0644 ${S}/boot/boot.scr.uimg ${DEPLOYDIR}/
+    fi
 }
 addtask deploy after do_install before do_build

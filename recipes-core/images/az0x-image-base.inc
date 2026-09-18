@@ -22,6 +22,7 @@ inherit core-image
 #   az01-player  (jp07/08/11) 1024 x 504076   ~492 MiB
 #   az01-console (jc11/16/nh08) 1024 x 503936 ~492 MiB
 #   az01-mpc     (acv*)       1024 x 430936   ~421 MiB
+#   az0x-signed  (JC11S/JP11S/JP20/JP21/JP21X/JP23) 1024 x 528518  (vendor kernel only)
 #   az04         (rmz2)       4096 x 205995   ~805 MiB
 #
 # Each board declares its own AZ0X_ROOTFS_KIB / blocksize / inode ratio in
@@ -129,4 +130,19 @@ python () {
             "az01-mpc ships vendor kernel 6.18.26; AZ0X_KERNEL_PROVIDER='%s' "
             "would build 6.6 instead. Set AZ0X_KERNEL_ALLOW_DOWNGRADE = \"1\" "
             "if that is genuinely what you want." % prov)
+
+    # JC11S (Prime 4 Plus) cannot run a kernel we build, at all. u-boot loads a
+    # signed FIT from the kernel partition and its control FDT carries
+    # required = "conf" against key denon-1, so an unsigned kernel is refused
+    # before it starts. Only the rootfs is replaceable on this board. This is a
+    # hard error rather than a warning because the failure would otherwise be a
+    # bricked-looking device at a customer's bench with no console output.
+    if (d.getVar('MACHINE') == 'az0x-signed' and prov != 'prebuilt'
+            and d.getVar('AZ0X_KERNEL_ALLOW_UNSIGNED') != '1'):
+        raise bb.parse.SkipRecipe(
+            "az0x-signed devices verify their kernel FIT (required = \"conf\", key "
+            "denon-1), so AZ0X_KERNEL_PROVIDER='%s' produces a kernel stock "
+            "u-boot refuses to start. Set AZ0X_KERNEL_ALLOW_UNSIGNED = \"1\" "
+            "if you have a way to sign it or a bootloader that does not "
+            "enforce the signature." % prov)
 }

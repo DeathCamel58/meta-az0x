@@ -4,10 +4,20 @@ Yocto/OpenEmbedded layer for building custom root filesystems for inMusic
 Brands "EngineOS" devices — Denon DJ, Akai MPC, Numark and Rane hardware built
 on the AZ0x platform.
 
-The layer **reuses each device's vendor-compiled kernel, device trees, boot
-script and kernel modules as opaque prebuilts.** No kernel and no bootloader is
-ever compiled: only userspace is built, and at flash time only the rootfs
-partition is replaced.
+The layer builds **both** the root filesystem and, where the device allows it,
+the kernel and device trees from source. `AZ0X_KERNEL_PROVIDER` selects which:
+
+| value | what you get |
+|---|---|
+| `prebuilt` | the vendor's compiled kernel, dtbs, boot script and modules staged as opaque binaries (default) |
+| `yocto` | linux-yocto 6.6 built from source, with our device trees and drivers |
+| `yocto-rt` | the same, PREEMPT_RT |
+
+No bootloader is ever compiled. At flash time only the rootfs partition is
+replaced.
+
+**Building a kernel and being able to boot it are separate questions.** See
+[Booting what you build](#booting-what-you-build).
 
 ## Machines
 
@@ -17,11 +27,42 @@ partition is replaced.
 | `az01-player` | Planck AZ01 Player | jp07, jp08, jp11 | same | 6.6.119 |
 | `az01-console` | Planck AZ01 Console | jc11, jc16, nh08 | same | 6.6.119 |
 | `az01-mpc` | MPC upgrade image | acv5/acv8/acva/acva2/acvb/acvm/acvr/acv5s | same | 6.18.26 |
+| `az01-jc11s` | Prime 4 Plus | jc11s | same | 6.1.111 |
 | `az04` | Planck AZ04 | rmz2 | RK3588 aarch64 `cortexa76-cortexa55` | 6.18.9 |
 
-`az01-player` is **confirmed booting on real hardware** (Denon DJ Prime Go, to a
-login prompt). `az04` is a scaffold only — those devices enforce RSA-2048 FIT
-signing and dm-verity, so a custom rootfs cannot boot without the vendor key.
+`az01-player` runs a **fully from-source stack on real hardware** (Denon DJ
+Prime Go): our kernel, our device tree, working display, touch, DC-jack power
+and battery. `az01-jc11s` builds but see below. `az04` is a scaffold only.
+
+## Booting what you build
+
+Whether a device will start what this layer produces depends on the device, and
+the two halves are independent.
+
+**The rootfs is open everywhere tested.** Nothing re-verifies it at boot — no
+dm-verity mapping, no IMA/EVM appraisal, no signed root hash. A modified rootfs
+boots. On the newer signed-container devices the check that does exist lives in
+the *updater*, which refuses an unsigned image from EngineOS 5.0.0 onwards;
+installing after downgrading to 4.3.2 sidesteps it.
+
+**The kernel is not open everywhere.**
+
+| board | how the kernel is loaded | can you boot your own? |
+|---|---|---|
+| `az01-premium` / `player` / `console` / `mpc` | u-boot loads `zImage` and the dtb **from the rootfs** and calls `bootz` on a raw image — no FIT, no signature | **yes**, proven on a Prime Go |
+| `az01-jc11s` (Prime 4 Plus) | u-boot loads `kernel.fit` from a dedicated kernel partition and its control FDT carries `required = "conf"` against key `denon-1` (`sha256,rsa2048`) | **not with stock u-boot** |
+| `az04` | signed FIT, same enforcement | **not with stock u-boot** |
+
+For the signed boards the layer will still build you a kernel — set
+`AZ0X_KERNEL_PROVIDER = "yocto"` and `AZ0X_KERNEL_ALLOW_UNSIGNED = "1"`, which
+exists precisely so that choice is deliberate — but **you need your own way to
+boot it**: the vendor's signing key, a bootloader that does not enforce the
+signature, or some other path onto the device. Without one, stock u-boot
+refuses the image before it starts, and the symptom is a device that looks dead
+with no console output. That is why the opt-in is required rather than assumed.
+
+The `/boot/zImage` and dtbs that land in the rootfs on those boards are build
+leftovers; u-boot never reads them.
 
 ## Images
 
