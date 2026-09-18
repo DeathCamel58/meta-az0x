@@ -109,7 +109,7 @@ A standard SBS battery on i2c3 at 0x0b, handled by mainline `sbs-battery`.
 Needs `CONFIG_BATTERY_SBS=y`. On our from-source kernel this currently shows as
 `i2c 3-000b: deferred probe pending`.
 
-## Audio -- one fixed rate, so there is no clksel table
+## Audio -- one fixed rate on this board
 
     card 1: JP11, device 0: JP11 PCM inmusic,jp11-audio-codec-0
     aplay --dump-hw-params:  RATE: 44100   (single value)
@@ -121,8 +121,23 @@ both clock-select lines stay low:
     gpio-59 (GPIO2_A3 | clksel0) out lo
     gpio-60 (GPIO2_A4 | clksel1) out lo
 
-So the "clksel encoding table" the plan set out to recover does not exist for
-this board - one rate, one state. Other GPIOs on the codec path:
+One rate, one clksel state - **on this board**. An earlier version of this
+section concluded from that the clksel encoding table "does not exist", which is
+wrong: it exists and is shared by every AZ0x board, and decompiling the vendor's
+machine driver recovered it in full.
+
+    rate    code   clksel1  clksel0
+    44100    0        0        0
+    48000    1        0        1
+    88200    2        1        0
+    96000    3        1        1
+
+What is board-specific is the *rate mask*, which the vendor keeps in a table
+indexed by compatible. JP11's mask contains only 44100, which is why measuring
+this board alone made it look as though no table existed - a reminder that a
+measurement on one board does not license a claim about the platform.
+
+Other GPIOs on the codec path:
 
     gpio-56 (nCODEC_RESET | reset) out hi ACTIVE LOW
     gpio-58 (MUTE        | mute ) out hi
