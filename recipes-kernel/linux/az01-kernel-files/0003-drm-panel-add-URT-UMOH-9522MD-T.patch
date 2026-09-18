@@ -1,4 +1,4 @@
-From dd258383ce3c384a8fb01b1e8180cba87b909882 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: az0x <dev@localhost>
 Date: Thu, 17 Sep 2026 15:26:05 -0400
 Subject: [PATCH] drm/panel: add URT UMOH-9522MD-T, the panel fitted to inMusic
@@ -41,14 +41,14 @@ Relies on the bootloader having initialised the panel rather than carrying an
 initialisation sequence, which is not acceptable upstream; the panel would
 need its DSI init recovered before this could be proposed.
 ---
- drivers/gpu/drm/panel/Kconfig                 |  13 ++
+ drivers/gpu/drm/panel/Kconfig                 |  13 +
  drivers/gpu/drm/panel/Makefile                |   1 +
- .../gpu/drm/panel/panel-urt-umoh-9522md-t.c   | 219 ++++++++++++++++++
- 3 files changed, 233 insertions(+)
+ .../gpu/drm/panel/panel-urt-umoh-9522md-t.c   | 502 ++++++++++++++++++
+ 3 files changed, 516 insertions(+)
  create mode 100644 drivers/gpu/drm/panel/panel-urt-umoh-9522md-t.c
 
 diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
-index 3a2f4a9..eda216a 100644
+index 3a2f4a9f1d46..eda216aad6a4 100644
 --- a/drivers/gpu/drm/panel/Kconfig
 +++ b/drivers/gpu/drm/panel/Kconfig
 @@ -788,6 +788,19 @@ config DRM_PANEL_TRULY_NT35597_WQXGA
@@ -72,7 +72,7 @@ index 3a2f4a9..eda216a 100644
  	tristate "Visionox RM69299"
  	depends on OF
 diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
-index 433e93d..8028ade 100644
+index 433e93d57949..8028ade613ac 100644
 --- a/drivers/gpu/drm/panel/Makefile
 +++ b/drivers/gpu/drm/panel/Makefile
 @@ -80,6 +80,7 @@ obj-$(CONFIG_DRM_PANEL_TPO_TD028TTEC1) += panel-tpo-td028ttec1.o
@@ -85,27 +85,30 @@ index 433e93d..8028ade 100644
  obj-$(CONFIG_DRM_PANEL_VISIONOX_R66451) += panel-visionox-r66451.o
 diff --git a/drivers/gpu/drm/panel/panel-urt-umoh-9522md-t.c b/drivers/gpu/drm/panel/panel-urt-umoh-9522md-t.c
 new file mode 100644
-index 0000000..9b84f63
+index 000000000000..c3330bf1a671
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-urt-umoh-9522md-t.c
-@@ -0,0 +1,219 @@
+@@ -0,0 +1,502 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * URT UMOH-9522MD-T MIPI-DSI panel, as fitted to inMusic AZ01 boards
 + * (Denon DJ Prime GO and relatives).
 + *
-+ * This driver deliberately sends NO panel initialisation sequence. u-boot
-+ * already brings the display up before handing over - the VOP reports
-+ * "enabled by bootloader" and the device tree carries a framebuffer
-+ * reservation for the handover - so the panel controller is already
-+ * configured by the time Linux probes. All that is missing for the display
-+ * pipeline to come up is a drm_panel that supplies the mode, because
-+ * rockchip-drm is component-based and will not finish binding until every
-+ * component, panel included, registers.
++ * The panel is an ILI9881C-class controller: register banks are selected with
++ * a 0xFF 0x98 0x81 <page> long write and configured with DCS short writes.
 + *
-+ * Consequently prepare() must NOT touch the reset line: asserting it would
-+ * clear the state u-boot established and leave a dark panel with no way to
-+ * restore it short of the init sequence this driver does not have.
++ * The initialisation sequence below is the vendor's, recovered from
++ * drivers/video/urt_umoh_9522md_t_panel.c inside U-Boot
++ * 2016.05-inmusic-20230621, dumped off the eMMC "uboot" partition of a
++ * Prime Go. It is reproduced byte for byte; nothing here was guessed.
++ *
++ * An earlier version of this driver sent no sequence at all and relied on
++ * u-boot having configured the panel before Linux started. That works from a
++ * cold boot and fails the moment anything powers the panel down: the supply,
++ * vcc-mipi, is regulator-boot-on but not regulator-always-on, so DRM blanking
++ * dropped it and the display never came back - backlight lit, no picture. With
++ * a real sequence the panel can be brought up from cold, which is what the
++ * reset pulse and the table below do.
 + *
 + * The mode is not guessed. It was read off the running vendor kernel with
 + * modetest, field for field:
@@ -136,7 +139,6 @@ index 0000000..9b84f63
 +struct umoh9522 {
 +	struct drm_panel panel;
 +	struct mipi_dsi_device *dsi;
-+	struct regulator *supply;
 +	struct gpio_desc *reset;
 +	enum drm_panel_orientation orientation;
 +	bool prepared;
@@ -163,22 +165,298 @@ index 0000000..9b84f63
 +	return container_of(panel, struct umoh9522, panel);
 +}
 +
++/*
++ * Initialisation sequence, recovered from the vendor's u-boot
++ * (drivers/video/urt_umoh_9522md_t_panel.c in U-Boot 2016.05-inmusic-20230621,
++ * dumped off the eMMC "uboot" partition of a Prime Go).
++ *
++ * The controller behaves like an ILI9881C: register banks are selected with a
++ * four-byte 0xFF 0x98 0x81 <page> long write, and everything else is a DCS
++ * short write of one parameter. The vendor table is 194 entries - three page
++ * selects (3, 4, 1) and 191 register writes - followed by a fixed tail.
++ *
++ * Every byte here is the vendor's. Nothing was invented or tuned.
++ */
++#define UMOH_PAGE	0
++#define UMOH_WRITE	1
++
++struct umoh9522_init_cmd {
++	u8 type;
++	u8 cmd;
++	u8 param;
++};
++
++static const struct umoh9522_init_cmd umoh9522_init[] = {
++	{ UMOH_PAGE,  0x03, 0x00 },
++	{ UMOH_WRITE, 0x01, 0x00 },
++	{ UMOH_WRITE, 0x02, 0x00 },
++	{ UMOH_WRITE, 0x03, 0x72 },
++	{ UMOH_WRITE, 0x04, 0x00 },
++	{ UMOH_WRITE, 0x05, 0x00 },
++	{ UMOH_WRITE, 0x06, 0x09 },
++	{ UMOH_WRITE, 0x07, 0x00 },
++	{ UMOH_WRITE, 0x08, 0x00 },
++	{ UMOH_WRITE, 0x09, 0x00 },
++	{ UMOH_WRITE, 0x0a, 0x00 },
++	{ UMOH_WRITE, 0x0b, 0x00 },
++	{ UMOH_WRITE, 0x0c, 0x00 },
++	{ UMOH_WRITE, 0x0d, 0x00 },
++	{ UMOH_WRITE, 0x0e, 0x00 },
++	{ UMOH_WRITE, 0x0f, 0x00 },
++	{ UMOH_WRITE, 0x10, 0x00 },
++	{ UMOH_WRITE, 0x11, 0x00 },
++	{ UMOH_WRITE, 0x12, 0x00 },
++	{ UMOH_WRITE, 0x13, 0x00 },
++	{ UMOH_WRITE, 0x14, 0x00 },
++	{ UMOH_WRITE, 0x15, 0x00 },
++	{ UMOH_WRITE, 0x16, 0x00 },
++	{ UMOH_WRITE, 0x17, 0x00 },
++	{ UMOH_WRITE, 0x18, 0x00 },
++	{ UMOH_WRITE, 0x19, 0x00 },
++	{ UMOH_WRITE, 0x1a, 0x00 },
++	{ UMOH_WRITE, 0x1b, 0x00 },
++	{ UMOH_WRITE, 0x1c, 0x00 },
++	{ UMOH_WRITE, 0x1d, 0x00 },
++	{ UMOH_WRITE, 0x1e, 0x40 },
++	{ UMOH_WRITE, 0x1f, 0x80 },
++	{ UMOH_WRITE, 0x20, 0x05 },
++	{ UMOH_WRITE, 0x21, 0x02 },
++	{ UMOH_WRITE, 0x22, 0x00 },
++	{ UMOH_WRITE, 0x23, 0x00 },
++	{ UMOH_WRITE, 0x24, 0x00 },
++	{ UMOH_WRITE, 0x25, 0x00 },
++	{ UMOH_WRITE, 0x26, 0x00 },
++	{ UMOH_WRITE, 0x27, 0x00 },
++	{ UMOH_WRITE, 0x28, 0x33 },
++	{ UMOH_WRITE, 0x29, 0x22 },
++	{ UMOH_WRITE, 0x2a, 0x00 },
++	{ UMOH_WRITE, 0x2b, 0x00 },
++	{ UMOH_WRITE, 0x2c, 0x00 },
++	{ UMOH_WRITE, 0x2d, 0x00 },
++	{ UMOH_WRITE, 0x2e, 0x00 },
++	{ UMOH_WRITE, 0x2f, 0x00 },
++	{ UMOH_WRITE, 0x30, 0x00 },
++	{ UMOH_WRITE, 0x31, 0x00 },
++	{ UMOH_WRITE, 0x32, 0x00 },
++	{ UMOH_WRITE, 0x33, 0x00 },
++	{ UMOH_WRITE, 0x34, 0x04 },
++	{ UMOH_WRITE, 0x35, 0x00 },
++	{ UMOH_WRITE, 0x36, 0x00 },
++	{ UMOH_WRITE, 0x37, 0x00 },
++	{ UMOH_WRITE, 0x38, 0x3c },
++	{ UMOH_WRITE, 0x39, 0x00 },
++	{ UMOH_WRITE, 0x3a, 0x00 },
++	{ UMOH_WRITE, 0x3b, 0x00 },
++	{ UMOH_WRITE, 0x3c, 0x00 },
++	{ UMOH_WRITE, 0x3d, 0x00 },
++	{ UMOH_WRITE, 0x3e, 0x00 },
++	{ UMOH_WRITE, 0x3f, 0x00 },
++	{ UMOH_WRITE, 0x40, 0x00 },
++	{ UMOH_WRITE, 0x41, 0x00 },
++	{ UMOH_WRITE, 0x42, 0x00 },
++	{ UMOH_WRITE, 0x43, 0x00 },
++	{ UMOH_WRITE, 0x44, 0x00 },
++	{ UMOH_WRITE, 0x50, 0x10 },
++	{ UMOH_WRITE, 0x51, 0x32 },
++	{ UMOH_WRITE, 0x52, 0x54 },
++	{ UMOH_WRITE, 0x53, 0x76 },
++	{ UMOH_WRITE, 0x54, 0x98 },
++	{ UMOH_WRITE, 0x55, 0xba },
++	{ UMOH_WRITE, 0x56, 0x10 },
++	{ UMOH_WRITE, 0x57, 0x32 },
++	{ UMOH_WRITE, 0x58, 0x54 },
++	{ UMOH_WRITE, 0x59, 0x76 },
++	{ UMOH_WRITE, 0x5a, 0x98 },
++	{ UMOH_WRITE, 0x5b, 0xba },
++	{ UMOH_WRITE, 0x5c, 0xdc },
++	{ UMOH_WRITE, 0x5d, 0xfe },
++	{ UMOH_WRITE, 0x5e, 0x00 },
++	{ UMOH_WRITE, 0x5f, 0x01 },
++	{ UMOH_WRITE, 0x60, 0x00 },
++	{ UMOH_WRITE, 0x61, 0x15 },
++	{ UMOH_WRITE, 0x62, 0x14 },
++	{ UMOH_WRITE, 0x63, 0x0e },
++	{ UMOH_WRITE, 0x64, 0x0f },
++	{ UMOH_WRITE, 0x65, 0x0c },
++	{ UMOH_WRITE, 0x66, 0x0d },
++	{ UMOH_WRITE, 0x67, 0x06 },
++	{ UMOH_WRITE, 0x68, 0x02 },
++	{ UMOH_WRITE, 0x69, 0x02 },
++	{ UMOH_WRITE, 0x6a, 0x02 },
++	{ UMOH_WRITE, 0x6b, 0x02 },
++	{ UMOH_WRITE, 0x6c, 0x02 },
++	{ UMOH_WRITE, 0x6d, 0x02 },
++	{ UMOH_WRITE, 0x6e, 0x07 },
++	{ UMOH_WRITE, 0x6f, 0x02 },
++	{ UMOH_WRITE, 0x70, 0x02 },
++	{ UMOH_WRITE, 0x71, 0x02 },
++	{ UMOH_WRITE, 0x72, 0x02 },
++	{ UMOH_WRITE, 0x73, 0x02 },
++	{ UMOH_WRITE, 0x74, 0x02 },
++	{ UMOH_WRITE, 0x75, 0x01 },
++	{ UMOH_WRITE, 0x76, 0x00 },
++	{ UMOH_WRITE, 0x77, 0x14 },
++	{ UMOH_WRITE, 0x78, 0x15 },
++	{ UMOH_WRITE, 0x79, 0x0e },
++	{ UMOH_WRITE, 0x7a, 0x0f },
++	{ UMOH_WRITE, 0x7b, 0x0c },
++	{ UMOH_WRITE, 0x7c, 0x0d },
++	{ UMOH_WRITE, 0x7d, 0x06 },
++	{ UMOH_WRITE, 0x7e, 0x02 },
++	{ UMOH_WRITE, 0x7f, 0x02 },
++	{ UMOH_WRITE, 0x80, 0x02 },
++	{ UMOH_WRITE, 0x81, 0x02 },
++	{ UMOH_WRITE, 0x82, 0x02 },
++	{ UMOH_WRITE, 0x83, 0x02 },
++	{ UMOH_WRITE, 0x84, 0x07 },
++	{ UMOH_WRITE, 0x85, 0x02 },
++	{ UMOH_WRITE, 0x86, 0x02 },
++	{ UMOH_WRITE, 0x87, 0x02 },
++	{ UMOH_WRITE, 0x88, 0x02 },
++	{ UMOH_WRITE, 0x89, 0x02 },
++	{ UMOH_WRITE, 0x8a, 0x02 },
++	{ UMOH_PAGE,  0x04, 0x00 },
++	{ UMOH_WRITE, 0x6e, 0x2a },
++	{ UMOH_WRITE, 0x6f, 0x35 },
++	{ UMOH_WRITE, 0x3a, 0x24 },
++	{ UMOH_WRITE, 0x8d, 0x14 },
++	{ UMOH_WRITE, 0x87, 0xba },
++	{ UMOH_WRITE, 0x26, 0x76 },
++	{ UMOH_WRITE, 0xb2, 0xd1 },
++	{ UMOH_WRITE, 0xb5, 0x27 },
++	{ UMOH_WRITE, 0x31, 0x75 },
++	{ UMOH_WRITE, 0x30, 0x03 },
++	{ UMOH_WRITE, 0x3b, 0x98 },
++	{ UMOH_WRITE, 0x35, 0x1f },
++	{ UMOH_WRITE, 0x33, 0x14 },
++	{ UMOH_WRITE, 0x7a, 0x0f },
++	{ UMOH_WRITE, 0x38, 0x01 },
++	{ UMOH_WRITE, 0x39, 0x00 },
++	{ UMOH_PAGE,  0x01, 0x00 },
++	{ UMOH_WRITE, 0x22, 0x0a },
++	{ UMOH_WRITE, 0x31, 0x00 },
++	{ UMOH_WRITE, 0x53, 0x45 },
++	{ UMOH_WRITE, 0x55, 0x4e },
++	{ UMOH_WRITE, 0x50, 0xc7 },
++	{ UMOH_WRITE, 0x51, 0xc2 },
++	{ UMOH_WRITE, 0x60, 0x25 },
++	{ UMOH_WRITE, 0x63, 0x00 },
++	{ UMOH_WRITE, 0xa0, 0x00 },
++	{ UMOH_WRITE, 0xa1, 0x16 },
++	{ UMOH_WRITE, 0xa2, 0x26 },
++	{ UMOH_WRITE, 0xa3, 0x16 },
++	{ UMOH_WRITE, 0xa4, 0x19 },
++	{ UMOH_WRITE, 0xa5, 0x2b },
++	{ UMOH_WRITE, 0xa6, 0x1e },
++	{ UMOH_WRITE, 0xa7, 0x20 },
++	{ UMOH_WRITE, 0xa8, 0x93 },
++	{ UMOH_WRITE, 0xa9, 0x20 },
++	{ UMOH_WRITE, 0xaa, 0x2c },
++	{ UMOH_WRITE, 0xab, 0x87 },
++	{ UMOH_WRITE, 0xac, 0x1f },
++	{ UMOH_WRITE, 0xad, 0x1f },
++	{ UMOH_WRITE, 0xae, 0x53 },
++	{ UMOH_WRITE, 0xaf, 0x27 },
++	{ UMOH_WRITE, 0xb0, 0x2a },
++	{ UMOH_WRITE, 0xb1, 0x52 },
++	{ UMOH_WRITE, 0xb2, 0x5b },
++	{ UMOH_WRITE, 0xb3, 0x23 },
++	{ UMOH_WRITE, 0xc0, 0x00 },
++	{ UMOH_WRITE, 0xc1, 0x11 },
++	{ UMOH_WRITE, 0xc2, 0x1e },
++	{ UMOH_WRITE, 0xc3, 0x0f },
++	{ UMOH_WRITE, 0xc4, 0x12 },
++	{ UMOH_WRITE, 0xc5, 0x26 },
++	{ UMOH_WRITE, 0xc6, 0x1c },
++	{ UMOH_WRITE, 0xc7, 0x1e },
++	{ UMOH_WRITE, 0xc8, 0x87 },
++	{ UMOH_WRITE, 0xc9, 0x19 },
++	{ UMOH_WRITE, 0xca, 0x26 },
++	{ UMOH_WRITE, 0xcb, 0x7f },
++	{ UMOH_WRITE, 0xcc, 0x20 },
++	{ UMOH_WRITE, 0xcd, 0x22 },
++	{ UMOH_WRITE, 0xce, 0x58 },
++	{ UMOH_WRITE, 0xcf, 0x2a },
++	{ UMOH_WRITE, 0xd0, 0x2e },
++	{ UMOH_WRITE, 0xd1, 0x50 },
++	{ UMOH_WRITE, 0xd2, 0x5d },
++	{ UMOH_WRITE, 0xd3, 0x23 },
++};
++
++static int umoh9522_send(struct mipi_dsi_device *dsi,
++			 const struct umoh9522_init_cmd *c)
++{
++	/* Page select is the ILI9881C magic prefix plus the bank number. */
++	const u8 page[4] = { 0xff, 0x98, 0x81, c->cmd };
++	int ret;
++
++	if (c->type == UMOH_PAGE)
++		ret = mipi_dsi_dcs_write_buffer(dsi, page, sizeof(page));
++	else
++		ret = mipi_dsi_dcs_write(dsi, c->cmd, &c->param, 1);
++
++	return ret < 0 ? ret : 0;
++}
++
 +static int umoh9522_prepare(struct drm_panel *panel)
 +{
 +	struct umoh9522 *p = to_umoh9522(panel);
++	size_t i;
 +	int ret;
 +
 +	if (p->prepared)
 +		return 0;
 +
 +	/*
-+	 * The regulator is already on - u-boot enabled it and the DT marks it
-+	 * regulator-boot-on - so this only takes a reference. The reset line is
-+	 * intentionally left alone; see the file comment.
++	 * The line ends LOW, and that is not a guess: with it low the display
++	 * works, with it high the panel sits in reset and the screen is black.
++	 * Measured both ways on a Prime Go.
++	 *
++	 * u-boot is no guide here - its panel driver toggles a GPIO it requests
++	 * as "enable-gpios", and this panel node has only reset-gpios, so that
++	 * code never drives this line; it is simply left low from boot. An
++	 * earlier version of this driver copied u-boot's 0-then-1 ordering onto
++	 * the reset line and produced exactly that black screen.
++	 *
++	 * We have no DSI init sequence for this panel - u-boot programs it
++	 * before Linux starts and we inherit that state. The vendor's own driver
++	 * does have one (eleven payloads, init0..init10, in a umo_panel_* driver
++	 * inside its kernel) but it has not been recovered yet.
++	 *
++	 * That makes the panel's configuration a one-shot thing we cannot
++	 * reproduce, so it must never be lost: vcc-mipi is regulator-boot-on but
++	 * NOT regulator-always-on, and dropping it wipes the panel. Powering it
++	 * here and dropping it in unprepare is what made the display never come
++	 * back from blanking - backlight on, no picture. The supply is taken once
++	 * at probe instead and held for the life of the device.
 +	 */
-+	ret = regulator_enable(p->supply);
++	msleep(15);
++	gpiod_set_value_cansleep(p->reset, 1);	/* assert */
++	msleep(20);
++	gpiod_set_value_cansleep(p->reset, 0);	/* release - the working state */
++	msleep(20);
++
++	for (i = 0; i < ARRAY_SIZE(umoh9522_init); i++) {
++		ret = umoh9522_send(p->dsi, &umoh9522_init[i]);
++		if (ret)
++			return dev_err_probe(&p->dsi->dev, ret,
++					     "init command %zu failed\n", i);
++	}
++
++	/* Tail, also the vendor's: back to page 0, tear on, out of sleep. */
++	ret = umoh9522_send(p->dsi, &(struct umoh9522_init_cmd){ UMOH_PAGE, 0x00, 0x00 });
++	if (!ret)
++		ret = mipi_dsi_dcs_set_tear_on(p->dsi, MIPI_DSI_DCS_TEAR_MODE_VBLANK);
++	if (!ret)
++		ret = mipi_dsi_dcs_exit_sleep_mode(p->dsi);
 +	if (ret)
 +		return ret;
++	msleep(120);
++
++	ret = mipi_dsi_dcs_set_display_on(p->dsi);
++	if (ret)
++		return ret;
++	msleep(5);
 +
 +	p->prepared = true;
 +	return 0;
@@ -191,7 +469,7 @@ index 0000000..9b84f63
 +	if (!p->prepared)
 +		return 0;
 +
-+	regulator_disable(p->supply);
++	/* See umoh9522_prepare(): the supply is held, never dropped. */
 +	p->prepared = false;
 +	return 0;
 +}
@@ -240,16 +518,20 @@ index 0000000..9b84f63
 +	p->dsi = dsi;
 +	mipi_dsi_set_drvdata(dsi, p);
 +
-+	p->supply = devm_regulator_get(dev, "power");
-+	if (IS_ERR(p->supply))
-+		return dev_err_probe(dev, PTR_ERR(p->supply),
-+				     "failed to get the panel supply\n");
++	/*
++	 * Enabled here and released only when the device goes away. See
++	 * umoh9522_prepare() for why this must not be tied to the prepare and
++	 * unprepare callbacks.
++	 */
++	ret = devm_regulator_get_enable(dev, "power");
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to enable the panel supply\n");
 +
 +	/*
 +	 * Claimed as ASIS so that requesting it does not drive it, which would
 +	 * reset the panel out from under u-boot's initialisation.
 +	 */
-+	p->reset = devm_gpiod_get_optional(dev, "reset", GPIOD_ASIS);
++	p->reset = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
 +	if (IS_ERR(p->reset))
 +		return dev_err_probe(dev, PTR_ERR(p->reset),
 +				     "failed to get the reset gpio\n");
@@ -278,7 +560,8 @@ index 0000000..9b84f63
 +		return dev_err_probe(dev, ret, "failed to attach to the DSI host\n");
 +	}
 +
-+	dev_info(dev, "registered (no init sequence; relying on the bootloader)\n");
++	dev_dbg(dev, "registered, %zu-command init sequence\n",
++		ARRAY_SIZE(umoh9522_init));
 +	return 0;
 +}
 +
@@ -308,6 +591,3 @@ index 0000000..9b84f63
 +
 +MODULE_DESCRIPTION("URT UMOH-9522MD-T DSI panel");
 +MODULE_LICENSE("GPL");
--- 
-2.43.0
-
