@@ -1,0 +1,4 @@
+# Make sure the symlink target always exists, so a failed generator leaves X
+# with an empty config rather than a dangling symlink in xorg.conf.d.
+d /run/az0x 0755 root root -
+f /run/az0x/10-panel-rotation.conf 0644 root root -

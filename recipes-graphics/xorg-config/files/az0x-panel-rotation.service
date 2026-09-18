@@ -1,0 +1,15 @@
+[Unit]
+Description=Derive Xorg panel rotation from the device tree
+DefaultDependencies=no
+After=systemd-tmpfiles-setup.service
+Before=xserver-nodm.service display-manager.service
+ConditionPathExists=/sys/firmware/devicetree/base
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+EnvironmentFile=-/etc/default/az0x-panel-rotation
+ExecStart=/usr/libexec/az0x-panel-rotation
+
+[Install]
+WantedBy=multi-user.target
