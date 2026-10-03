@@ -9,9 +9,13 @@
 #                        = "yocto"      linux-yocto 6.6, LINUX_KERNEL_TYPE=standard
 #                        = "yocto-rt"   linux-yocto-rt 6.6, preempt-rt
 #
-# Building our own kernel is only possible at all because az01 u-boot loads
+# Building our own kernel is possible on the az01 boards because u-boot loads
 # zImage and the dtb FROM THE ROOTFS and calls bootz on a raw image - no FIT,
-# no signature. (az04 cannot: signed FIT with required = "conf".)
+# no signature. The az0x-signed board (JC11S and siblings) is the exception:
+# it boots a signed FIT, so a from-source kernel is emitted as an unsigned FIT
+# in the vendor shape (see az0x-signed-fit.inc) for an external tool to sign
+# and install, and still needs AZ0X_KERNEL_ALLOW_UNSIGNED="1". (az04 cannot:
+# the same signed-FIT enforcement, and this layer emits no FIT for it.)
 
 AZ0X_KERNEL_PROVIDER ?= "prebuilt"
 

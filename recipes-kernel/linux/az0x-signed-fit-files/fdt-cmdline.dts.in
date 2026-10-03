@@ -1,0 +1,10 @@
+/dts-v1/;
+
+/ {
+	fragment@0 {
+		target-path = "/chosen";
+		__overlay__ {
+			bootargs = "@@BOOTARGS@@";
+		};
+	};
+};

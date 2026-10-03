@@ -63,15 +63,21 @@ installing after downgrading to 4.3.2 sidesteps it.
 | `az04` | signed FIT, same enforcement | **not with stock u-boot** |
 
 For the signed boards the layer will still build you a kernel — set
-`AZ0X_KERNEL_PROVIDER = "yocto"` and `AZ0X_KERNEL_ALLOW_UNSIGNED = "1"`, which
-exists precisely so that choice is deliberate — but **you need your own way to
-boot it**: the vendor's signing key, a bootloader that does not enforce the
-signature, or some other path onto the device. Without one, stock u-boot
-refuses the image before it starts, and the symptom is a device that looks dead
-with no console output. That is why the opt-in is required rather than assumed.
+`AZ0X_KERNEL_PROVIDER = "yocto"` (**or `"yocto-rt"` for the PREEMPT-RT build**)
+and `AZ0X_KERNEL_ALLOW_UNSIGNED = "1"`, which exists precisely so that choice
+is deliberate. On `az0x-signed` a from-source kernel is not deployed as a bare
+zImage: the layer assembles a **kernel FIT** in the vendor shape — image nodes
+`kernel`, `fdt-<board>` and `fdt-cmdline`, configurations `conf-<board>` and
+`cmdline` — with a command-line overlay that sets `root=PARTLABEL=denonlinux`.
+This layer does not sign it; signing it and writing it to the `kernel`
+partition is left to an external boot-activation tool. Without such a boot
+path the stock u-boot refuses the image before it starts, and the symptom
+is a device that looks dead with no console output. That is why the opt-in is
+required rather than assumed.
 
 The `/boot/zImage` and dtbs that land in the rootfs on those boards are build
-leftovers; u-boot never reads them.
+leftovers; u-boot never reads them. The FIT and its inputs land in
+`DEPLOY_DIR_IMAGE` as `kernel.fit`, `fdt-cmdline.dtbo` and `kernel.its`.
 
 ## Images
 

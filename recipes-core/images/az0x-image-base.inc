@@ -131,12 +131,15 @@ python () {
             "would build 6.6 instead. Set AZ0X_KERNEL_ALLOW_DOWNGRADE = \"1\" "
             "if that is genuinely what you want." % prov)
 
-    # JC11S (Prime 4 Plus) cannot run a kernel we build, at all. u-boot loads a
-    # signed FIT from the kernel partition and its control FDT carries
-    # required = "conf" against key denon-1, so an unsigned kernel is refused
-    # before it starts. Only the rootfs is replaceable on this board. This is a
-    # hard error rather than a warning because the failure would otherwise be a
-    # bricked-looking device at a customer's bench with no console output.
+    # JC11S (Prime 4 Plus) verifies a signed FIT from its dedicated kernel
+    # partition (required = "conf", key denon-1) before starting. On the
+    # from-source path this layer emits that FIT in the vendor shape but does
+    # not sign it; signing it and getting it onto the `kernel` partition is
+    # left to an external boot-activation tool. A from-source kernel is
+    # therefore supported on purpose, but only behind an explicit opt-in -
+    # AZ0X_KERNEL_ALLOW_UNSIGNED = "1" - because stock u-boot refuses an
+    # unsigned FIT and the failure would otherwise look like a dead device
+    # with no console output.
     if (d.getVar('MACHINE') == 'az0x-signed' and prov != 'prebuilt'
             and d.getVar('AZ0X_KERNEL_ALLOW_UNSIGNED') != '1'):
         raise bb.parse.SkipRecipe(
