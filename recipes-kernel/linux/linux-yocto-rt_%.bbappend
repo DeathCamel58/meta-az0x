@@ -8,3 +8,16 @@
 # config fragment and device-tree/driver patches from az01-kernel.inc, nor the
 # COMPATIBLE_MACHINE entries that let it build for our boards.
 require az01-kernel.inc
+
+
+# The same prefix rule hides meta-rockchip's linux-yocto_%.bbappend from this
+# recipe, but the machine still inherits rk3288.inc's
+#   KERNEL_FEATURES:append:rk3288 = " bsp/rockchip/remove-non-rockchip-arch-arm.scc"
+# whose .scc lives in that bbappend's rockchip-kmeta. Without it
+# do_kernel_metadata fails with "Feature ... not found". Pull the same kmeta in
+# so both providers configure identically. The directory is located through
+# BBPATH (every layer appends its LAYERDIR) rather than a hard-coded layer path;
+# meta-rockchip is a LAYERDEPENDS of this layer, so it is always present.
+AZ0X_ROCKCHIP_KMETA_DIR := "${@os.path.dirname(bb.utils.which(d.getVar('BBPATH'), 'recipes-kernel/linux/linux-yocto/rockchip-kmeta') or '')}"
+FILESEXTRAPATHS:prepend:rockchip := "${AZ0X_ROCKCHIP_KMETA_DIR}:"
+SRC_URI:append:rockchip = " file://rockchip-kmeta;type=kmeta;name=rockchip-kmeta;destsuffix=rockchip-kmeta"
