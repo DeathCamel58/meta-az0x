@@ -88,7 +88,7 @@ new file mode 100644
 index 000000000000..c3330bf1a671
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-urt-umoh-9522md-t.c
-@@ -0,0 +1,521 @@
+@@ -0,0 +1,566 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * URT UMOH-9522MD-T MIPI-DSI panel, as fitted to inMusic AZ01 boards
@@ -142,6 +142,8 @@ index 000000000000..c3330bf1a671
 +	struct gpio_desc *reset;
 +	enum drm_panel_orientation orientation;
 +	bool prepared;
++	bool initialised;
++	bool settling;
 +};
 +
 +/* Read with modetest on the vendor kernel; see the comment above. */
@@ -408,43 +410,57 @@ index 000000000000..c3330bf1a671
 +		return 0;
 +
 +	/*
-+	 * The line ends LOW, and that is not a guess: with it low the display
-+	 * works, with it high the panel sits in reset and the screen is black.
-+	 * Measured both ways on a Prime Go.
-+	 *
-+	 * u-boot is no guide here - its panel driver toggles a GPIO it requests
-+	 * as "enable-gpios", and this panel node has only reset-gpios, so that
-+	 * code never drives this line; it is simply left low from boot. An
-+	 * earlier version of this driver copied u-boot's 0-then-1 ordering onto
-+	 * the reset line and produced exactly that black screen.
++	 * The register upload happens ONCE, not on every resume.
 +	 *
 +	 * The supply must never be dropped: vcc-mipi is regulator-boot-on but
 +	 * NOT regulator-always-on, and dropping it wipes the panel. Powering it
 +	 * here and dropping it in unprepare is what made the display never come
-+	 * back from blanking - backlight on, no picture. The supply is taken once
-+	 * at probe instead and held for the life of the device.
++	 * back from blanking - backlight on, no picture. The supply is taken
++	 * once at probe instead and held for the life of the device.
++	 *
++	 * Because it is held, the panel keeps its configuration across a blank.
++	 * Re-pulsing reset and re-sending all 194 registers on every wake was
++	 * therefore pure churn, and re-initialising an already-configured panel
++	 * is what produced the brief flicker-then-settle after each resume.
++	 * unprepare() leaves the panel awake and configured; disable()/enable()
++	 * just toggle the output. So a resume costs one DCS command, not 194.
++	 *
++	 * The reset line ends LOW, and that is not a guess: with it low the
++	 * display works, with it high the panel sits in reset and the screen is
++	 * black. Measured both ways on a Prime Go. u-boot is no guide here - its
++	 * panel driver toggles a GPIO it requests as "enable-gpios", and this
++	 * node has only reset-gpios, so that code never drives this line. An
++	 * earlier version copied u-boot's 0-then-1 ordering onto the reset line
++	 * and produced exactly that black screen.
 +	 */
-+	msleep(15);
-+	gpiod_set_value_cansleep(p->reset, 1);	/* assert */
-+	msleep(20);
-+	gpiod_set_value_cansleep(p->reset, 0);	/* release - the working state */
-+	msleep(20);
++	if (!p->initialised) {
++		msleep(15);
++		gpiod_set_value_cansleep(p->reset, 1);	/* assert */
++		msleep(20);
++		gpiod_set_value_cansleep(p->reset, 0);	/* release - working state */
++		msleep(20);
 +
-+	for (i = 0; i < ARRAY_SIZE(umoh9522_init); i++) {
-+		ret = umoh9522_send(p->dsi, &umoh9522_init[i]);
++		for (i = 0; i < ARRAY_SIZE(umoh9522_init); i++) {
++			ret = umoh9522_send(p->dsi, &umoh9522_init[i]);
++			if (ret)
++				return dev_err_probe(&p->dsi->dev, ret,
++						     "init command %zu failed\n", i);
++		}
++
++		/* Tail, also the vendor's: page 0, tear on, out of sleep. */
++		ret = umoh9522_send(p->dsi,
++				    &(struct umoh9522_init_cmd){ UMOH_PAGE, 0x00, 0x00 });
++		if (!ret)
++			ret = mipi_dsi_dcs_set_tear_on(p->dsi,
++						       MIPI_DSI_DCS_TEAR_MODE_VBLANK);
++		if (!ret)
++			ret = mipi_dsi_dcs_exit_sleep_mode(p->dsi);
 +		if (ret)
-+			return dev_err_probe(&p->dsi->dev, ret,
-+					     "init command %zu failed\n", i);
-+	}
++			return ret;
 +
-+	/* Tail, also the vendor's: back to page 0, tear on, out of sleep. */
-+	ret = umoh9522_send(p->dsi, &(struct umoh9522_init_cmd){ UMOH_PAGE, 0x00, 0x00 });
-+	if (!ret)
-+		ret = mipi_dsi_dcs_set_tear_on(p->dsi, MIPI_DSI_DCS_TEAR_MODE_VBLANK);
-+	if (!ret)
-+		ret = mipi_dsi_dcs_exit_sleep_mode(p->dsi);
-+	if (ret)
-+		return ret;
++		p->initialised = true;
++		p->settling = true;	/* enable() owes the settling delays */
++	}
 +
 +	p->prepared = true;
 +	return 0;
@@ -453,6 +469,7 @@ index 000000000000..c3330bf1a671
 +static int umoh9522_enable(struct drm_panel *panel)
 +{
 +	struct umoh9522 *p = to_umoh9522(panel);
++	int ret;
 +
 +	/*
 +	 * set_display_on belongs here, not at the end of prepare(). DRM runs
@@ -467,8 +484,36 @@ index 000000000000..c3330bf1a671
 +	 * The 120 ms is the controller's sleep-out settling time, owed after
 +	 * the exit_sleep_mode at the end of prepare().
 +	 */
-+	msleep(120);
-+	return mipi_dsi_dcs_set_display_on(p->dsi);
++	if (p->settling)
++		msleep(120);
++
++	ret = mipi_dsi_dcs_set_display_on(p->dsi);
++	if (ret)
++		return ret;
++
++	/*
++	 * Hold here before returning, because drm_panel_enable() switches the
++	 * backlight on the moment this returns. This covers the settling that
++	 * follows a real register upload, so it is owed on the first prepare
++	 * only - a resume does not re-initialise and does not wait.
++	 *
++	 * The init table itself is not the cause of any of this: it is byte for
++	 * byte what u-boot sends, and u-boot's command descriptors carry no
++	 * timing fields at all (checked: 0 of 194 entries use the two spare
++	 * bytes). The vendor kernel has no per-command delays either - a scan
++	 * for a {cmd, param, delay} table found no such structure.
++	 *
++	 * Measured by eye on a Prime GO while the upload still ran on every
++	 * resume: no delay flickers then settles, 400 ms is "a bit, not bad",
++	 * 2 s is "barely noticeable". The usual panel-simple delay.enable
++	 * trade - longer is cleaner but costs dark screen.
++	 */
++	if (p->settling) {
++		msleep(300);
++		p->settling = false;
++	}
++
++	return 0;
 +}
 +
 +static int umoh9522_disable(struct drm_panel *panel)
