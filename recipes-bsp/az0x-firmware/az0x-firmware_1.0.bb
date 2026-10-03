@@ -40,9 +40,44 @@ EXCLUDE_FROM_SHLIBS = "1"
 do_configure[noexec] = "1"
 do_compile[noexec] = "1"
 
+# Blobs the vendor ships that no kernel we build can ever ask for. Each one was
+# checked against the tree we actually compile, not assumed:
+#
+#   ilitek/*      - we drive the touchscreen with mainline ili210x, which has
+#                   zero request_firmware() calls. (The vendor's Ilitek path is
+#                   an ICE-mode flash programmer: bricking risk, no upside.)
+#
+# cypress/ is NOT on this list, and the reason is a trap worth remembering.
+# Mainline brcmfmac has no cypress/ path - BRCMF_FW_DEFAULT_PATH is "brcm/" -
+# so the directory looks unreachable and dropping it looks free. It is not:
+#
+#   brcm/brcmfmac4339-sdio.bin -> ../cypress/cyfmac4339-sdio.bin
+#
+# The vendor reaches it by symlink from the directory brcmfmac *does* search,
+# so removing cypress/ leaves a dangling link and a 4339 board loses Wi-Fi.
+# (find -type f does not list symlinks, which is how it was missed the first
+# time. Check the built image, not the vendor tree listing.)
+#   eta5805-*     - no driver in our kernel binds "eta,eta5805". The DT nodes
+#                   exist on three boards; the driver does not.
+#   jms578_*      - firmware for a JMicron USB-SATA bridge, flashed by a
+#                   userspace tool. Not kernel firmware at all.
+#
+# The Broadcom blobs all stay. Which Wi-Fi part is fitted varies per unit and we
+# can only test one board, so dropping any of those would be guesswork.
+#
+# regulatory.db is dropped here and comes from wireless-regdb instead - same
+# two files, same path, but ISC-licensed and built from source.
+AZ0X_FIRMWARE_EXCLUDE ?= "ilitek eta5805-dsp-nh08.bin eta5805-dsp-nh10.bin \
+                          jms578_std_v00.01.00.06_self_power.bin \
+                          regulatory.db regulatory.db.p7s"
+
 do_install() {
     install -d ${D}${nonarch_base_libdir}/firmware
     cp -a ${S}/lib/firmware/. ${D}${nonarch_base_libdir}/firmware/
+
+    for f in ${AZ0X_FIRMWARE_EXCLUDE}; do
+        rm -rf ${D}${nonarch_base_libdir}/firmware/$f
+    done
 
     # cp -a preserves the staged files' ownership, and the vendor tree came out
     # of a debugfs rdump which cannot chown - so everything carries uid 1000.
@@ -52,5 +87,8 @@ do_install() {
 }
 
 FILES:${PN} = "${nonarch_base_libdir}/firmware"
+
+# regulatory.db/.p7s now come from wireless-regdb rather than the vendor dump.
+RDEPENDS:${PN} += "wireless-regdb-static"
 
 INSANE_SKIP:${PN} += "arch ldflags already-stripped buildpaths"
