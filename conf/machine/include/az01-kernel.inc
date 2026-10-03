@@ -37,13 +37,17 @@ MACHINEOVERRIDES .= "${@':az01-kprebuilt' if (d.getVar('AZ0X_KERNEL_PROVIDER') o
 # Device trees come prebuilt on the default path; the source path overrides this.
 KERNEL_DEVICETREE = ""
 
-# Modules are pulled in as a machine-essential RDEPENDS. Routed through a
-# variable so the source-kernel milestones can drop them: a from-source
-# multi_v7_defconfig builds far more modules than the vendor's 76, and the
-# rootfs partition is a fixed 492 MiB. Serial console, eMMC and ext4 are all
-# built in, so a modules-free rootfs boots fine.
+# Modules are pulled in as a machine-essential RDEPENDS.
+#
+# The from-source path used to drop them, because inheriting
+# multi_v7_defconfig produced ~595 modules against a fixed 492 MiB rootfs.
+# That worked, but it meant any symbol left at =m was silently absent, which
+# caused six separate bugs - DRM_ROCKCHIP, PWM_ROCKCHIP, CFG80211/BRCMFMAC, the
+# whole sound stack, USB_EHCI_HCD_PLATFORM and the USB control surface.
+#
+# We now carry our own defconfig instead of the generic multi-SoC one, so the
+# module set is ours to control, and =m means what it says again.
 AZ0X_ESSENTIAL_MODULES ?= "kernel-modules"
-AZ0X_ESSENTIAL_MODULES:az01-ksrc = ""
 
 # D1 kept the VENDOR device trees, to isolate "does mainline 6.6 boot this SoC"
 # from "is our reconstructed DTS right". That worked, so D2 now builds the dtb

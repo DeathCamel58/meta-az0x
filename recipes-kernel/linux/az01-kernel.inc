@@ -20,6 +20,24 @@ COMPATIBLE_MACHINE:az0x-signed = "az0x-signed"
 # the base - that is exactly how tinker-board, the RK3288 reference board,
 # builds: no .scc BSP and no KMACHINE, because a defconfig is a complete
 # substitute for a kmeta BSP definition.
+# Base kernel configuration.
+#
+# This replaces meta-rockchip's multi_v7_defconfig. That is a generic
+# multi-SoC config: it brought in ~595 modules, of which roughly 548 were
+# drivers for hardware this board does not have (OMAP, i.MX, Exynos and so on),
+# while leaving things the vendor builds in sitting at =m. Comparing against
+# the vendor's own config - read out of its zImage via IKCONFIG - it runs
+# 1152 =y / 74 =m where we ran 1619 =y / 595 =m.
+#
+# This defconfig was generated with `bitbake -c savedefconfig virtual/kernel`
+# from the known-good configuration, so adopting it is a no-op by construction.
+# Trimming happens on top of it, deliberately and one step at a time.
+#
+# KBUILD_DEFCONFIG must be cleared: when set it names a file under
+# arch/arm/configs/ and wins over a defconfig supplied through SRC_URI.
+KBUILD_DEFCONFIG:az01 = ""
+SRC_URI:append:az01 = " file://defconfig"
+
 SRC_URI:append:az01 = " file://az01-base.cfg"
 
 # The board device trees. kernel-devicetree.bbclass literally runs
@@ -69,15 +87,3 @@ SRC_URI:append:az01 = " file://0005-ASoC-rockchip-add-the-inMusic-AZ0x-machine-d
 # included. The pins never reach the I2S function.
 SRC_URI:append:az01 = " file://0006-pinctrl-rockchip-accept-and-ignore-slew-rate.patch"
 
-# CONFIG_EXTRA_FIRMWARE reads from ${S}/firmware/, so the blobs have to be in
-# the kernel tree before configure. See the note in az01-base.cfg for why they
-# are embedded rather than loaded from the rootfs.
-do_configure:prepend:az01() {
-    if [ -d "${AZ0X_VENDOR_DIR}/${AZ0X_BOARD_DIR}/lib/firmware/brcm" ]; then
-        install -d ${S}/firmware/brcm
-        for f in brcmfmac43456-sdio.bin brcmfmac43456-sdio.txt; do
-            src="${AZ0X_VENDOR_DIR}/${AZ0X_BOARD_DIR}/lib/firmware/brcm/$f"
-            [ -f "$src" ] && install -m 0644 "$src" ${S}/firmware/brcm/
-        done
-    fi
-}
