@@ -9,6 +9,9 @@
 # COMPATIBLE_MACHINE entries that let it build for our boards.
 require az01-kernel.inc
 
+# Real-time preemption model; see the fragment for why the defconfig alone
+# does not select it.
+SRC_URI:append:az01 = " file://az01-rt.cfg"
 
 # The same prefix rule hides meta-rockchip's linux-yocto_%.bbappend from this
 # recipe, but the machine still inherits rk3288.inc's
