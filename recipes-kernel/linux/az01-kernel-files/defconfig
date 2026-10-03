@@ -389,8 +389,6 @@ CONFIG_REGULATOR_TPS65217=y
 CONFIG_REGULATOR_TPS65218=y
 CONFIG_REGULATOR_TPS6586X=y
 CONFIG_REGULATOR_TPS65910=y
-CONFIG_MEDIA_SUPPORT=m
-CONFIG_MEDIA_USB_SUPPORT=y
 CONFIG_USB_VIDEO_CLASS=m
 CONFIG_V4L_PLATFORM_DRIVERS=y
 CONFIG_V4L_MEM2MEM_DRIVERS=y
@@ -684,3 +682,10 @@ CONFIG_PRINTK_TIME=y
 CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT=y
 CONFIG_MAGIC_SYSRQ=y
 CONFIG_DEBUG_FS=y
+
+# No camera and no capture node in any of our 34 device trees, and no Rockchip
+# VPU driver is enabled, so the media stack built ~177 modules that nothing
+# could load. The only things that depended on it were omapdrm (wrong SoC),
+# adv7511 (we use dw-hdmi) and usb_f_uvc (unused). Our HDMI does not use CEC -
+# DRM_DW_HDMI_CEC is already unset.
+# CONFIG_MEDIA_SUPPORT is not set
