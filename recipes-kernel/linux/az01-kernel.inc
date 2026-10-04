@@ -87,3 +87,12 @@ SRC_URI:append:az01 = " file://0005-ASoC-rockchip-add-the-inMusic-AZ0x-machine-d
 # included. The pins never reach the I2S function.
 SRC_URI:append:az01 = " file://0006-pinctrl-rockchip-accept-and-ignore-slew-rate.patch"
 
+
+# The USB hub. On the boards that have one - jp13 and relatives - every
+# user-facing USB port, the internal SATA drive bay and the control surface sit
+# behind an SMBus-configured hub that does not attach upstream until told to.
+# Nothing in-tree covers it: onboard_usb_hub does power and reset sequencing
+# only and never touches i2c, and usb251xb speaks a different register layout
+# for the USB 2.0 parts. See the driver header for why it must not reset the
+# hub.
+SRC_URI:append:az01 = " file://0007-usb-misc-add-the-inMusic-AZ01-USB-hub-attach-driver.patch"

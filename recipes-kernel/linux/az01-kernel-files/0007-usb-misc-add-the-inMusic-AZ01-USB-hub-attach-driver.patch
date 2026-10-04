@@ -1,0 +1,293 @@
+From 7aedb9abf89110115ae5f3ba6ab45a61d107c9cd Mon Sep 17 00:00:00 2001
+From: Dylan Corrales <deathcamel58@gmail.com>
+Date: Sun, 4 Oct 2026 14:54:13 -0400
+Subject: [PATCH] usb: misc: add the inMusic AZ01 USB hub attach driver
+
+On AZ01 boards that have one - jp13 (Denon DJ SC6000) and relatives -
+every user-facing USB port, the internal SATA drive bay and the control
+surface hang off an SMBus-configured hub on i2c1 at 0x2d. The hub comes
+out of reset as an SMBus slave and does not attach upstream until told
+to, so measured on an SC6000 the EHCI at ff500000 carried nothing but
+its own root hub.
+
+Bring it up the way the vendor does: release reset, stream the
+configuration blob the device tree already carries as smsc,config-file
+to hub address 0x001e, then send the attach command.
+
+Streaming the blob is not optional. The hub reloads its stored
+configuration on the detached to attached transition, so patching
+individual config registers beforehand is discarded the moment it
+attaches - the port disable masks were measured at 0x00 immediately
+before the attach and 0x7e immediately after. Without the blob the hub
+attaches reporting a single downstream port and none of the three
+populated ones.
+
+The blob never has to be decoded. It is a CFGB container the hub parses
+itself, copied verbatim in chunks of at most 128 bytes framed as
+addr_hi/addr_lo/length/data/0x00. That framing, the destination address
+and the two command words were all read out of the vendor kernel's own
+usb5537 driver, which is built into its zImage, and verified by hand
+over i2c-tools first.
+Upstream-Status: Pending [board support for an unreleased platform]
+---
+ drivers/usb/misc/Kconfig        |  13 ++
+ drivers/usb/misc/Makefile       |   1 +
+ drivers/usb/misc/az01-usb-hub.c | 219 ++++++++++++++++++++++++++++++++
+ 3 files changed, 233 insertions(+)
+ create mode 100644 drivers/usb/misc/az01-usb-hub.c
+
+diff --git a/drivers/usb/misc/Kconfig b/drivers/usb/misc/Kconfig
+index fe1b5fec1dfc..979fdd83b07a 100644
+--- a/drivers/usb/misc/Kconfig
++++ b/drivers/usb/misc/Kconfig
+@@ -319,3 +319,16 @@ config USB_ONBOARD_HUB
+ 	  this config will enable the driver and it will automatically
+ 	  match the state of the USB subsystem. If this driver is a
+ 	  module it will be called onboard_usb_hub.
++
++config USB_AZ01_HUB
++	tristate "inMusic AZ01 USB hub attach"
++	depends on I2C && OF
++	help
++	  Say Y here to attach the SMBus-configured USB hub fitted to inMusic
++	  AZ01 boards that have one, such as the Denon DJ SC6000 (jp13). Every
++	  user-facing USB port, the internal SATA drive bay and the control
++	  surface sit behind it, and the hub does not attach to its upstream
++	  port until it is told to, so without this there is nothing on the bus
++	  but the root hub.
++
++	  If this driver is a module it will be called az01-usb-hub.
+diff --git a/drivers/usb/misc/Makefile b/drivers/usb/misc/Makefile
+index 1992cc284d8a..3661b5346c57 100644
+--- a/drivers/usb/misc/Makefile
++++ b/drivers/usb/misc/Makefile
+@@ -33,3 +33,4 @@ obj-$(CONFIG_USB_SISUSBVGA)		+= sisusbvga/
+ obj-$(CONFIG_USB_LINK_LAYER_TEST)	+= lvstest.o
+ obj-$(CONFIG_BRCM_USB_PINMAP)		+= brcmstb-usb-pinmap.o
+ obj-$(CONFIG_USB_ONBOARD_HUB)		+= onboard_usb_hub.o
++obj-$(CONFIG_USB_AZ01_HUB)		+= az01-usb-hub.o
+diff --git a/drivers/usb/misc/az01-usb-hub.c b/drivers/usb/misc/az01-usb-hub.c
+new file mode 100644
+index 000000000000..7d85d05eb583
+--- /dev/null
++++ b/drivers/usb/misc/az01-usb-hub.c
+@@ -0,0 +1,219 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * inMusic AZ01 USB hub attach.
++ *
++ * On AZ01 boards that have one - jp13 (Denon DJ SC6000) and relatives - every
++ * user-facing USB port, the internal SATA drive bay and the control surface
++ * hang off an SMBus-configured hub on i2c1 at 0x2d. The hub comes out of reset
++ * as an SMBus slave and does not attach to its upstream port until told to, so
++ * without this driver the EHCI controller sees nothing but its own root hub.
++ *
++ * Bringing it up is three steps, in this order:
++ *
++ *   1. release the reset line,
++ *   2. stream the configuration blob to the hub, and
++ *   3. send the attach command.
++ *
++ * Step 2 is not optional and cannot be replaced by patching individual
++ * registers. The hub reloads its stored configuration on the detached to
++ * attached transition, so anything written to the config registers beforehand
++ * is discarded the instant it attaches - measured on an SC6000, the port
++ * disable masks read 0x00 immediately before the attach and 0x7e immediately
++ * after. Without the blob the hub comes up reporting a single downstream port
++ * and none of the three populated ones.
++ *
++ * The blob itself never has to be understood. It is a CFGB container that the
++ * hub parses on its own; the driver copies it verbatim from the device tree to
++ * address 0x001e in chunks of at most 128 bytes, each framed as
++ *
++ *	addr_hi addr_lo length <data...> 0x00
++ *
++ * which is exactly what the vendor driver does, read out of its own binary.
++ * Note this is a plain memory write and takes no execute command, unlike the
++ * config register protocol used by az01_hub_read_reg().
++ *
++ * The board DTS hogs USB_MUX_CTRL to select the internal path and leaves
++ * nUSB_HUB_RESET to this driver through reset-gpios.
++ *
++ * Copyright (C) 2026 Dylan Corrales
++ */
++
++
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/i2c.h>
++#include <linux/mod_devicetable.h>
++#include <linux/module.h>
++#include <linux/property.h>
++
++/*
++ * Port disable masks, self- and bus-powered. Both arrive as 0x7e - ports 1
++ * through 6 disabled, leaving only port 7 - which presents as a hub reporting
++ * a single downstream port.
++ */
++#define AZ01_HUB_PRT_DIS_SP	0x300a
++#define AZ01_HUB_PRT_DIS_BP	0x300b
++
++static const u8 az01_hub_exec[]   = { 0x99, 0x37, 0x00 };
++static const u8 az01_hub_attach[] = { 0xaa, 0x56, 0x00 };
++
++static int az01_hub_send(struct i2c_client *client, const u8 *buf, int len)
++{
++	int ret;
++
++	ret = i2c_master_send(client, buf, len);
++	if (ret < 0)
++		return ret;
++
++	return ret == len ? 0 : -EIO;
++}
++
++static int az01_hub_read_reg(struct i2c_client *client, u16 reg, u8 *val)
++{
++	u8 cmd[] = {
++		0x00, 0x00,		/* command buffer address */
++		0x04,			/* bytes that follow */
++		0x01,			/* read */
++		0x01,			/* one register */
++		reg >> 8, reg & 0xff,
++	};
++	static const u8 result[] = { 0x00, 0x04 };
++	u8 buf[2];
++	int ret;
++
++	ret = az01_hub_send(client, cmd, sizeof(cmd));
++	if (ret)
++		return ret;
++
++	ret = az01_hub_send(client, az01_hub_exec, sizeof(az01_hub_exec));
++	if (ret)
++		return ret;
++
++	ret = az01_hub_send(client, result, sizeof(result));
++	if (ret)
++		return ret;
++
++	ret = i2c_master_recv(client, buf, sizeof(buf));
++	if (ret < 0)
++		return ret;
++	if (ret != sizeof(buf))
++		return -EIO;
++
++	/* buf[0] is a status byte, the register value follows it. */
++	*val = buf[1];
++
++	return 0;
++}
++
++/*
++ * Where the hub expects its configuration blob, and the largest payload the
++ * vendor driver sends in one transfer.
++ */
++#define AZ01_HUB_CFG_ADDR	0x001e
++#define AZ01_HUB_CFG_CHUNK	128
++
++static int az01_hub_write_config(struct i2c_client *client,
++				 const u8 *cfg, size_t len)
++{
++	u8 buf[3 + AZ01_HUB_CFG_CHUNK + 1];
++	u16 addr = AZ01_HUB_CFG_ADDR;
++	int ret;
++
++	while (len) {
++		size_t n = min_t(size_t, len, AZ01_HUB_CFG_CHUNK);
++
++		buf[0] = addr >> 8;
++		buf[1] = addr & 0xff;
++		buf[2] = n;
++		memcpy(&buf[3], cfg, n);
++		buf[3 + n] = 0x00;
++
++		ret = az01_hub_send(client, buf, n + 4);
++		if (ret)
++			return ret;
++
++		addr += n;
++		cfg += n;
++		len -= n;
++	}
++
++	return 0;
++}
++
++static int az01_hub_probe(struct i2c_client *client)
++{
++	struct gpio_desc *reset;
++	u8 sp, bp, *cfg;
++	int count, ret;
++
++	/*
++	 * reset-gpios is flagged active-high in the vendor device tree while the
++	 * line is named nUSB_HUB_RESET, so drive it explicitly rather than
++	 * trusting the polarity: low holds the hub in reset, high releases it.
++	 */
++	reset = devm_gpiod_get(&client->dev, "reset", GPIOD_OUT_LOW);
++	if (IS_ERR(reset))
++		return dev_err_probe(&client->dev, PTR_ERR(reset),
++				     "failed to get the reset GPIO\n");
++
++	usleep_range(5000, 6000);
++	gpiod_set_value(reset, 1);
++
++	/* The hub needs to finish booting before it answers on SMBus. */
++	msleep(100);
++
++	count = device_property_count_u8(&client->dev, "smsc,config-file");
++	if (count <= 0)
++		return dev_err_probe(&client->dev, count ?: -EINVAL,
++				     "no smsc,config-file in the device tree\n");
++
++	cfg = devm_kmalloc(&client->dev, count, GFP_KERNEL);
++	if (!cfg)
++		return -ENOMEM;
++
++	ret = device_property_read_u8_array(&client->dev, "smsc,config-file",
++					    cfg, count);
++	if (ret)
++		return dev_err_probe(&client->dev, ret,
++				     "failed to read smsc,config-file\n");
++
++	ret = az01_hub_write_config(client, cfg, count);
++	if (ret)
++		return dev_err_probe(&client->dev, ret,
++				     "failed to write the hub configuration\n");
++
++	ret = az01_hub_send(client, az01_hub_attach, sizeof(az01_hub_attach));
++	if (ret)
++		return dev_err_probe(&client->dev, ret,
++				     "failed to attach the hub\n");
++
++	/* The vendor driver settles for this long after attaching. */
++	msleep(300);
++
++	if (az01_hub_read_reg(client, AZ01_HUB_PRT_DIS_SP, &sp) ||
++	    az01_hub_read_reg(client, AZ01_HUB_PRT_DIS_BP, &bp))
++		sp = bp = 0xff;
++
++	dev_info(&client->dev, "hub attached, %d bytes of config, port masks %02x/%02x\n",
++		 count, sp, bp);
++
++	return 0;
++}
++
++static const struct of_device_id az01_hub_of_match[] = {
++	{ .compatible = "smsc,usb5537b" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, az01_hub_of_match);
++
++static struct i2c_driver az01_hub_driver = {
++	.driver = {
++		.name = "az01-usb-hub",
++		.of_match_table = az01_hub_of_match,
++	},
++	.probe = az01_hub_probe,
++};
++module_i2c_driver(az01_hub_driver);
++
++MODULE_DESCRIPTION("inMusic AZ01 USB hub attach");
++MODULE_LICENSE("GPL");
