@@ -12,3 +12,7 @@ Tethering.Freq=2412
 Enable=false
 Tethering=false
 Tethering.Freq=2412
+[Bluetooth]
+Enable=true
+Tethering=false
+Tethering.Freq=2412

@@ -68,9 +68,12 @@ IMAGE_FEATURES += "${AZ0X_DESKTOP_FEATURES}"
 # conf/machine/*.conf. Harmless on boards where it is unset - it installs
 # nothing rather than guess.
 # connman-client gives connmanctl; the desktop already has the applet, but
-# there is no CLI without it. az0x-wifi-default seeds ConnMan so the radio
-# is enabled on a read-only rootfs where its own state cannot persist.
-AZ0X_DESKTOP_INSTALL_sato = "az0x-panel-rotation az0x-onscreen-keyboard connman-client az0x-wifi-default"
+# there is no CLI without it.
+# az0x-connman-defaults seeds ConnMan's technology state so both Wi-Fi and
+# Bluetooth are enabled on a read-only rootfs where its own state cannot
+# persist. It sits here rather than in AZ0X_BASE_INSTALL because it drags in
+# connman, and space on the az01 rootfs partition is the binding constraint.
+AZ0X_DESKTOP_INSTALL_sato = "az0x-panel-rotation az0x-onscreen-keyboard connman-client az0x-connman-defaults"
 
 AZ0X_DESKTOP_INSTALL_weston = " \
     wayland-utils \
