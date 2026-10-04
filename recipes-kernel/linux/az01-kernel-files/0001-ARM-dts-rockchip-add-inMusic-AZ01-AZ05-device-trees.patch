@@ -17976,7 +17976,7 @@ new file mode 100644
 index 0000000..7abc4a1
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13.dts
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,37 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -17990,6 +17990,30 @@ index 0000000..7abc4a1
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
++
++/*
++ * JP13 mounts the digitiser 90 degrees out from the LCD.  The panel is native
++ * portrait and the display is rotated 270 degrees (inmusic,panel-rotation),
++ * but the touch controller's axes follow the landscape glass, so applying the
++ * display rotation alone leaves a residual 90 degree error.  Measured on an
++ * SC6000: a touch at the top right registered at the top left.
++ *
++ * Correcting it here means userspace applies exactly one transform - the
++ * display rotation - on every board, instead of needing a per-board quirk.
++ * Invert-then-swap is the order touchscreen_report_pos() applies these in.
++ *
++ * u-boot flips this node to status = "okay" at boot (the source tree has
++ * ili2110@41 enabled instead); it rewrites only status, so these properties
++ * survive.
++ */
++/ {
++	i2c@ff160000 {
++		ili2118@26 {
++			touchscreen-inverted-y;
++			touchscreen-swapped-x-y;
++		};
++	};
++};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-base.dtsi
 new file mode 100644
 index 0000000..f98f12f
