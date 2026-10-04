@@ -1468,7 +1468,7 @@ new file mode 100644
 index 0000000..d2ff826
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acv5s.dts
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,13 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -1481,6 +1481,7 @@ index 0000000..d2ff826
 +#include "rk3288-az01-opt-acv5s-6.dtsi"
 +#include "rk3288-az01-regulators-acv.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi
 new file mode 100644
 index 0000000..fb89a4b
@@ -3761,7 +3762,7 @@ new file mode 100644
 index 0000000..dd1d52f
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvb-c.dts
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,31 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -3775,6 +3776,7 @@ index 0000000..dd1d52f
 +#include "rk3288-az01-opt-acv5s-5.dtsi"
 +#include "rk3288-az01-opt-acv5s-6.dtsi"
 +#include "rk3288-az01-regulators-acv.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/ {
 +	#address-cells = <0x02>;
@@ -3797,7 +3799,7 @@ new file mode 100644
 index 0000000..05a1bc0
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvb.dts
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,12 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -3809,6 +3811,7 @@ index 0000000..05a1bc0
 +#include "rk3288-az01-opt-acv5s-5.dtsi"
 +#include "rk3288-az01-opt-acv5s-6.dtsi"
 +#include "rk3288-az01-regulators-acv.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-base.dtsi
 new file mode 100644
 index 0000000..57b4c60
@@ -4959,7 +4962,7 @@ new file mode 100644
 index 0000000..0674b09
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-c.dts
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,32 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -4974,6 +4977,7 @@ index 0000000..0674b09
 +#include "rk3288-az01-opt-acv5s-6.dtsi"
 +#include "rk3288-az01-regulators-acv.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/ {
 +	#address-cells = <0x02>;
@@ -4996,7 +5000,7 @@ new file mode 100644
 index 0000000..472bb27
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvm.dts
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,13 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -5009,6 +5013,7 @@ index 0000000..472bb27
 +#include "rk3288-az01-opt-acv5s-6.dtsi"
 +#include "rk3288-az01-regulators-acv.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-fan-pwm.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-fan-pwm.dtsi
 new file mode 100644
 index 0000000..69979ad
@@ -9657,7 +9662,7 @@ new file mode 100644
 index 0000000..febc0b6
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11-c.dts
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,33 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -9673,6 +9678,7 @@ index 0000000..febc0b6
 +#include "rk3288-az01-opt-jc11.dtsi"
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/ {
 +	#address-cells = <0x02>;
@@ -9695,7 +9701,7 @@ new file mode 100644
 index 0000000..99af4c8
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11.dts
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,15 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -9710,6 +9716,7 @@ index 0000000..99af4c8
 +#include "rk3288-az01-opt-jc11.dtsi"
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s-base.dtsi
 new file mode 100644
 index 0000000..df92b05
@@ -10783,7 +10790,7 @@ new file mode 100644
 index 0000000..81a0059
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s.dts
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,15 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -10798,6 +10805,7 @@ index 0000000..81a0059
 +#include "rk3288-az01-opt-jc11.dtsi"
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi
 new file mode 100644
 index 0000000..858d5ba
@@ -11937,7 +11945,7 @@ new file mode 100644
 index 0000000..55c0174
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-c.dts
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,33 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -11953,6 +11961,7 @@ index 0000000..55c0174
 +#include "rk3288-az01-opt-jc11.dtsi"
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/ {
 +	#address-cells = <0x02>;
@@ -11975,7 +11984,7 @@ new file mode 100644
 index 0000000..f3f2e37
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16.dts
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,15 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -11990,6 +11999,7 @@ index 0000000..f3f2e37
 +#include "rk3288-az01-opt-jc11.dtsi"
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-base.dtsi
 new file mode 100644
 index 0000000..91d3011
@@ -13137,7 +13147,7 @@ new file mode 100644
 index 0000000..c554ddc
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-c.dts
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,32 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -13152,6 +13162,7 @@ index 0000000..c554ddc
 +#include "rk3288-az01-opt-acv5s-6.dtsi"
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/ {
 +	#address-cells = <0x02>;
@@ -13174,7 +13185,7 @@ new file mode 100644
 index 0000000..9e28a51
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp07.dts
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,13 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -13187,6 +13198,7 @@ index 0000000..9e28a51
 +#include "rk3288-az01-opt-acv5s-6.dtsi"
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-base.dtsi
 new file mode 100644
 index 0000000..5729c85
@@ -14334,7 +14346,7 @@ new file mode 100644
 index 0000000..239bb77
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-c-revf.dts
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,34 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -14351,6 +14363,7 @@ index 0000000..239bb77
 +#include "rk3288-az01-opt-jp08.dtsi"
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/ {
 +	#address-cells = <0x02>;
@@ -14373,7 +14386,7 @@ new file mode 100644
 index 0000000..9bab6ef
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-c.dts
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,34 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -14390,6 +14403,7 @@ index 0000000..9bab6ef
 +#include "rk3288-az01-opt-jp08.dtsi"
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/ {
 +	#address-cells = <0x02>;
@@ -15555,7 +15569,7 @@ new file mode 100644
 index 0000000..afa98b6
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf.dts
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,15 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -15570,12 +15584,13 @@ index 0000000..afa98b6
 +#include "rk3288-az01-opt-jp08.dtsi"
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08.dts
 new file mode 100644
 index 0000000..f1267db
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08.dts
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,15 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -15590,6 +15605,7 @@ index 0000000..f1267db
 +#include "rk3288-az01-opt-jp08.dtsi"
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-base.dtsi
 new file mode 100644
 index 0000000..f5416dc
@@ -17938,7 +17954,7 @@ new file mode 100644
 index 0000000..7ebc251
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-c.dts
-@@ -0,0 +1,32 @@
+@@ -0,0 +1,33 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -17954,6 +17970,7 @@ index 0000000..7ebc251
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/ {
 +	#address-cells = <0x02>;
@@ -17976,7 +17993,7 @@ new file mode 100644
 index 0000000..7abc4a1
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13.dts
-@@ -0,0 +1,90 @@
+@@ -0,0 +1,38 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -17990,6 +18007,7 @@ index 0000000..7abc4a1
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/*
 + * JP13 mounts the digitiser 90 degrees out from the LCD.  The panel is native
@@ -18011,59 +18029,6 @@ index 0000000..7abc4a1
 +		ili2118@26 {
 +			touchscreen-inverted-y;
 +			touchscreen-swapped-x-y;
-+		};
-+	};
-+};
-+
-+/*
-+ * JP13's user-facing USB port sits behind a Microchip USB5537B hub
-+ * (i2c@ff140000, address 0x2d). The vendor brings it up from a "virtual-mux"
-+ * driver that applies a device tree overlay at runtime: the state-internal
-+ * fragments set the hub node to status = "okay" and apply the usb-reset-pin
-+ * and usb-sel-int pin groups. Mainline has no such driver, so the hub node
-+ * stays disabled, nUSB_HUB_RESET is never deasserted, and nothing downstream
-+ * can enumerate. Measured on an SC6000: EHCI ff500000 carries only its own
-+ * root hub, and /sys/bus/platform/devices/usb-mux has no driver bound.
-+ *
-+ * We own this DTS, so express the resolved "internal" state statically rather
-+ * than reimplement a runtime overlay mechanism for a choice that is fixed at
-+ * design time.
-+ *
-+ * The pin groups carry the levels themselves - usb-sel-int is pcfg-output-high
-+ * and usb-sel-ext pcfg-output-low - but a pinctrl "default" state is only
-+ * applied when a driver probes the node, and nothing binds smsc,usb5537b. So
-+ * drive both lines with gpio-hogs, which are applied by gpiolib when the gpio
-+ * controller probes and need no driver at all.
-+ *
-+ *   USB_MUX_CTRL    gpio8 pin 1  (gpio-249)  high = internal, low = external
-+ *
-+ * Only the mux line is hogged. nUSB_HUB_RESET (gpio7 pin 2) is left to
-+ * az01-usb-hub via the node's reset-gpios, so that driver can start the hub
-+ * from a known state.
-+ *
-+ * This brings the hub up but not yet the ports: it attaches reporting a
-+ * single downstream port, and not one of the three populated ones. See
-+ * az01-usb-hub for why, and for what has been ruled out.
-+ */
-+/ {
-+	pinctrl {
-+
-+		gpio@ff7f0000 {
-+
-+			usb-mux-internal-hog {
-+				gpio-hog;
-+				gpios = <0x01 0x00>;
-+				output-high;
-+			};
-+		};
-+	};
-+};
-+
-+/ {
-+	i2c@ff140000 {
-+
-+		usb5537@2d {
-+			status = "okay";
 +		};
 +	};
 +};
@@ -19188,7 +19153,7 @@ new file mode 100644
 index 0000000..cbfe037
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-c.dts
-@@ -0,0 +1,34 @@
+@@ -0,0 +1,35 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -19206,6 +19171,7 @@ index 0000000..cbfe037
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/ {
 +	#address-cells = <0x02>;
@@ -19228,7 +19194,7 @@ new file mode 100644
 index 0000000..1f41f4a
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp14.dts
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,16 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -19244,6 +19210,7 @@ index 0000000..1f41f4a
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-sound-codec-pins.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mg01-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-mg01-base.dtsi
 new file mode 100644
 index 0000000..99889fe
@@ -21534,7 +21501,7 @@ new file mode 100644
 index 0000000..13b6cd4
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-c.dts
-@@ -0,0 +1,31 @@
+@@ -0,0 +1,32 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -21549,6 +21516,7 @@ index 0000000..13b6cd4
 +#include "rk3288-az01-opt-acv5s-6.dtsi"
 +#include "rk3288-az01-regulators-acv.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/ {
 +	#address-cells = <0x02>;
@@ -21571,7 +21539,7 @@ new file mode 100644
 index 0000000..a5733db
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5.dts
-@@ -0,0 +1,12 @@
+@@ -0,0 +1,13 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -21584,6 +21552,7 @@ index 0000000..a5733db
 +#include "rk3288-az01-opt-acv5s-6.dtsi"
 +#include "rk3288-az01-regulators-acv.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-base.dtsi
 new file mode 100644
 index 0000000..c79b413
@@ -22722,7 +22691,7 @@ new file mode 100644
 index 0000000..68a627d
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-c.dts
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,31 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -22736,6 +22705,7 @@ index 0000000..68a627d
 +#include "rk3288-az01-opt-acv5s-5.dtsi"
 +#include "rk3288-az01-opt-acv5s-6.dtsi"
 +#include "rk3288-az01-regulators-acv.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 +
 +/ {
 +	#address-cells = <0x02>;
@@ -22758,7 +22728,7 @@ new file mode 100644
 index 0000000..6b10e26
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8.dts
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,12 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -22770,6 +22740,7 @@ index 0000000..6b10e26
 +#include "rk3288-az01-opt-acv5s-5.dtsi"
 +#include "rk3288-az01-opt-acv5s-6.dtsi"
 +#include "rk3288-az01-regulators-acv.dtsi"
++#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opp-1704.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opp-1704.dtsi
 new file mode 100644
 index 0000000..c99a554
@@ -24000,6 +23971,81 @@ index 0000000..2f883cd
 +			interrupts = <0x06 0x02>;
 +			irq-gpios = <&{/pinctrl/gpio@ff7e0000} 0x06 0x00>;
 +			reset-gpios = <&{/pinctrl/gpio@ff7e0000} 0x05 0x01>;
++		};
++	};
++};
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-usb-hub.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-usb-hub.dtsi
+new file mode 100644
+index 0000000..a1b2c3d
+--- /dev/null
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-usb-hub.dtsi
+@@ -0,0 +1,69 @@
++// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
++/*
++ * rk3288-az01 option: usb-hub
++ *
++ * Present on 27 of 35 boards - every one that fits an SMSC USB5537B on
++ * i2c@ff140000 at 0x2d. The user-facing USB ports, the internal drive bay and
++ * the control surface all sit behind it, so without this none of them work.
++ *
++ * The vendor brings the hub up from a "virtual-mux" driver that applies a
++ * device tree overlay at runtime: its state-internal fragments set the hub
++ * node to status = "okay" and apply the usb-reset-pin and usb-sel-int pin
++ * groups. Mainline binds nothing to "virtual-mux", so the node stays disabled
++ * and the hub never appears. Reimplementing a runtime overlay mechanism to
++ * pick between two states fixed at design time would be absurd when we own
++ * these trees, so express the resolved "internal" state statically.
++ *
++ * This is one file rather than 27 copies because the boards are identical
++ * here: all 27 declare usb-sel-int as bank 8 pin 1 with pcfg-output-high, all
++ * put the hub on i2c@ff140000, and all default their mux to "internal". Only
++ * the smsc,config-file blob differs per board, and that stays in the board's
++ * own node where the driver reads it from.
++ *
++ *   USB_MUX_CTRL    gpio8 pin 1  (gpio-249)  high = internal, low = external
++ *
++ * A gpio-hog rather than pinctrl, because a pinctrl "default" state is only
++ * applied when a driver probes the node, and the levels live in the pin groups
++ * themselves (usb-sel-int is pcfg-output-high, usb-sel-ext pcfg-output-low).
++ *
++ * nUSB_HUB_RESET (gpio7 pin 2) is deliberately NOT hogged. It is left to
++ * az01-usb-hub through the node's reset-gpios, because that driver has to
++ * sequence it against the configuration write: the hub reloads its stored
++ * configuration on the detached-to-attached transition, so the blob has to be
++ * streamed between releasing reset and attaching.
++ *
++ * Verified on an SC6000 (jp13): 7 ports, the JMicron bridge on the internal
++ * bay, the control surface and a flash drive. The other 26 are untested, but
++ * the arrangement is identical on all of them.
++ *
++ * NOT included by hg03, hg03-c or mg01. They fit the hub, but their trees
++ * never declare gpio@ff7f0000 as a gpio-controller - that comes from
++ * rk3288-az01-opt-acv5s.dtsi, which those three do not include. Pulling this
++ * file in there would have dtc invent an empty gpio@ff7f0000 and the hog would
++ * silently do nothing, which is worse than leaving them alone. Sort out where
++ * their mux line really lives before wiring them up.
++ *
++ * Include this LAST in a board .dts - it overrides status on a node the board
++ * dtsi declares as disabled.
++ */
++
++/ {
++	pinctrl {
++
++		gpio@ff7f0000 {
++
++			usb-mux-internal-hog {
++				gpio-hog;
++				gpios = <0x01 0x00>;
++				output-high;
++			};
++		};
++	};
++
++	i2c@ff140000 {
++
++		usb5537@2d {
++			status = "okay";
 +		};
 +	};
 +};
