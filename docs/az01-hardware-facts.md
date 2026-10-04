@@ -40,6 +40,19 @@ controller will be dead and the bootloader framebuffer handover will not
 happen. The touch swap is presumably u-boot probing which controller is fitted;
 this unit has the **ILI2117**, not the ILI2116 the shipped DTB enables.
 
+**These values are JP11's.** The fixups are a family-wide mechanism but the
+nodes differ per board: JP13 swaps `ili2110@41` for `ili2118@26` rather than
+2116/2117, and also flips `/i2c@ff140000/usb5537@2d` to `okay` — the USB hub
+that carries its user ports, internal drive bay and control surface. Read the
+live tree on the board in front of you rather than assuming this table.
+
+The `/reserved-memory/framebuffer` row is load-bearing and currently does not
+take effect: u-boot fills in its `reg` and enables it, but `/reserved-memory`
+declares `#address-cells`/`#size-cells` of 1 against a root of 2, so the kernel
+rejects the whole node (`OF: fdt: Reserved memory: unsupported node format`)
+and CMA is then placed over the region u-boot reserved. Fixing the cells would
+break u-boot's fixup, which writes an 8-byte `reg` assuming 1/1.
+
 ## Display -- the complete mode (this is most of the panel work)
 
     modetest -c  ->  DSI-1 connected, 94x151 mm

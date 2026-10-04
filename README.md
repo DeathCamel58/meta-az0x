@@ -27,12 +27,21 @@ replaced.
 | `az01-player` | Planck AZ01 Player | jp07, jp08, jp11 | same | 6.6.119 |
 | `az01-console` | Planck AZ01 Console | jc11, jc16, nh08 | same | 6.6.119 |
 | `az01-mpc` | MPC upgrade image | acv5/acv8/acva/acva2/acvb/acvm/acvr/acv5s | same | 6.18.26 |
-| `az01-jc11s` | Prime 4 Plus | jc11s | same | 6.1.111 |
+| `az0x-signed` | signed-boot generation | jc11s, jp11s, jp20, jp21, jp21x, jp23 | same | 6.1.111 |
 | `az04` | Planck AZ04 | rmz2 | RK3588 aarch64 `cortexa76-cortexa55` | 6.18.9 |
 
-`az01-player` runs a **fully from-source stack on real hardware** (Denon DJ
-Prime Go): our kernel, our device tree, working display, touch, DC-jack power
-and battery. `az01-jc11s` builds but see below. `az04` is a scaffold only.
+Three machines run a **fully from-source stack on real hardware** — our kernel,
+our device tree, our userspace:
+
+- `az01-player` on a Denon DJ Prime Go: display, touch, audio, DC-jack power
+  and battery.
+- `az01-premium` on a Denon DJ SC6000: display, touch, audio, and the USB hub
+  that carries the user ports, the internal drive bay and the control surface.
+- `az0x-signed` on a Denon DJ Prime 4 Plus, with `linux-yocto-rt`, booted by a
+  tester using embargoed workarounds — root filesystem on a USB stick through
+  that same hub.
+
+`az04` is a scaffold only.
 
 ## Booting what you build
 
@@ -50,7 +59,7 @@ installing after downgrading to 4.3.2 sidesteps it.
 | board | how the kernel is loaded | can you boot your own? |
 |---|---|---|
 | `az01-premium` / `player` / `console` / `mpc` | u-boot loads `zImage` and the dtb **from the rootfs** and calls `bootz` on a raw image — no FIT, no signature | **yes**, proven on a Prime Go |
-| `az01-jc11s` (Prime 4 Plus) | u-boot loads `kernel.fit` from a dedicated kernel partition and its control FDT carries `required = "conf"` against key `denon-1` (`sha256,rsa2048`) | **not with stock u-boot** |
+| `az0x-signed` (Prime 4 Plus and siblings) | u-boot loads `kernel.fit` from a dedicated kernel partition and its control FDT carries `required = "conf"` against key `denon-1` (`sha256,rsa2048`) | **not with stock u-boot** — but proven bootable on a Prime 4 Plus using embargoed workarounds |
 | `az04` | signed FIT, same enforcement | **not with stock u-boot** |
 
 For the signed boards the layer will still build you a kernel — set
