@@ -10790,7 +10790,7 @@ new file mode 100644
 index 0000000..81a0059
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s.dts
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,42 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -10806,6 +10806,33 @@ index 0000000..81a0059
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
 +#include "rk3288-az01-usb-hub.dtsi"
++
++/*
++ * The panel. This board's dtsi names urt,umo-p080md-t, which is what the
++ * vendor ships statically, but u-boot rewrites panel@0's compatible at boot
++ * from the hardware it detects - the same fixup it applies to the touch
++ * controllers' status. A JC11S was observed running urt,umo-9399md-4t.
++ *
++ * That matters because the two are not variants: p080md-t is 800x1280 at
++ * 73 MHz and 9399md-4t is 1200x1920 at 165.28 MHz, with a different init
++ * sequence. Driving one as the other leaves the panel dark while the display
++ * pipeline looks healthy - connector connected, rockchip-drm bound, fbcon
++ * attached - because everything on the SoC side is in fact working.
++ *
++ * Name it explicitly so the right panel is selected even when the dtb comes
++ * from a signed FIT that u-boot does not fix up.
++ *
++ * If a JC11S turns out to fit the p080md-t after all, drop this block rather
++ * than changing it - the dtsi default is then already correct.
++ */
++/ {
++	mipi@ff960000 {
++
++		panel@0 {
++			compatible = "urt,umo-9399md-4t";
++		};
++	};
++};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi
 new file mode 100644
 index 0000000..858d5ba
