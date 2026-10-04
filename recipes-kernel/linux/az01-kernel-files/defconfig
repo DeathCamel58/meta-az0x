@@ -683,9 +683,35 @@ CONFIG_DEBUG_INFO_DWARF_TOOLCHAIN_DEFAULT=y
 CONFIG_MAGIC_SYSRQ=y
 CONFIG_DEBUG_FS=y
 
-# No camera and no capture node in any of our 34 device trees, and no Rockchip
-# VPU driver is enabled, so the media stack built ~177 modules that nothing
-# could load. The only things that depended on it were omapdrm (wrong SoC),
-# adv7511 (we use dw-hdmi) and usb_f_uvc (unused). Our HDMI does not use CEC -
-# DRM_DW_HDMI_CEC is already unset.
-# CONFIG_MEDIA_SUPPORT is not set
+# The media stack is on, but only the half of it that drives real hardware.
+#
+# This board has two media-class devices that were sitting with no driver:
+#   ff9a0000.video-codec  "rockchip,rk3288-vpu"  -> hantro, hardware video decode
+#   ff920000.rga          "rockchip,rk3288-rga"  -> 2D raster accelerator
+# Both live under drivers/media/platform/rockchip, so turning the subsystem off
+# turned them off too.
+#
+# MEDIA_SUPPORT_FILTER keeps the rest out: no analog or digital TV, no radio, no
+# SDR, no USB or PCI capture, no test drivers. There is no camera and no capture
+# node in any of our 34 device trees, so none of that could ever bind.
+CONFIG_MEDIA_SUPPORT=y
+CONFIG_MEDIA_SUPPORT_FILTER=y
+CONFIG_MEDIA_PLATFORM_SUPPORT=y
+# CONFIG_MEDIA_CAMERA_SUPPORT is not set
+# CONFIG_MEDIA_ANALOG_TV_SUPPORT is not set
+# CONFIG_MEDIA_DIGITAL_TV_SUPPORT is not set
+# CONFIG_MEDIA_RADIO_SUPPORT is not set
+# CONFIG_MEDIA_SDR_SUPPORT is not set
+# CONFIG_MEDIA_TEST_SUPPORT is not set
+# CONFIG_MEDIA_USB_SUPPORT is not set
+# CONFIG_MEDIA_PCI_SUPPORT is not set
+CONFIG_V4L_MEM2MEM_DRIVERS=y
+CONFIG_VIDEO_HANTRO=m
+CONFIG_VIDEO_HANTRO_ROCKCHIP=y
+CONFIG_VIDEO_ROCKCHIP_RGA=m
+
+# ff800000.watchdog ("snps,dw-wdt") had no driver and /sys/class/watchdog did
+# not exist. The vendor kernel builds this in.
+CONFIG_WATCHDOG=y
+CONFIG_WATCHDOG_CORE=y
+CONFIG_DW_WATCHDOG=y
