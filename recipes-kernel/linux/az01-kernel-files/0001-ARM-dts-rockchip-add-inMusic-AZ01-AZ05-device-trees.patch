@@ -5819,11 +5819,11 @@ index 0000000..2232cf8
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -6950,11 +6950,11 @@ index 0000000..ad2d4f2
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -8077,11 +8077,11 @@ index 0000000..385ca73
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -9229,11 +9229,11 @@ index 0000000..b7c325e
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -10363,11 +10363,11 @@ index 0000000..df92b05
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -11490,11 +11490,11 @@ index 0000000..858d5ba
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -12689,11 +12689,11 @@ index 0000000..91d3011
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -13886,11 +13886,11 @@ index 0000000..5729c85
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -15106,11 +15106,11 @@ index 0000000..101d921
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -16278,11 +16278,11 @@ index 0000000..f5416dc
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -17513,11 +17513,11 @@ index 0000000..035f608
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -18686,11 +18686,11 @@ index 0000000..f98f12f
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -19897,11 +19897,11 @@ index 0000000..99889fe
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -28005,11 +28005,11 @@ index 0000000..3afdf9a
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -28768,11 +28768,11 @@ index 0000000..de4f6f2
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -29517,11 +29517,11 @@ index 0000000..f9ae147
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -30274,11 +30274,11 @@ index 0000000..3c79758
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -31039,11 +31039,11 @@ index 0000000..5aead69
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -31810,11 +31810,11 @@ index 0000000..dcbaf54
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -34130,11 +34130,11 @@ index 0000000..b08aca5
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -35022,11 +35022,11 @@ index 0000000..41149d9
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
@@ -35831,11 +35831,11 @@ index 0000000..e33ceb0
 +		reg = <0x00 0xffaf0080 0x00 0x20>;
 +	};
 +	rga@ff920000 {
-+		compatible = "rockchip,rk3288-rga2";
++		compatible = "rockchip,rk3288-rga2", "rockchip,rk3288-rga";
 +		reg = <0x00 0xff920000 0x00 0x10000>;
 +		interrupts = <0x00 0x12 0x04>;
 +		clocks = <&{/clock-controller@ff760000} 0xc8 &{/clock-controller@ff760000} 0x1d6 &{/clock-controller@ff760000} 0x6a>;
-+		clock-names = "aclk\0hclk\0rga";
++		clock-names = "aclk\0hclk\0sclk";
 +		power-domains = <&{/power-management@ff730000/power-controller} 0x09>;
 +		resets = <&{/clock-controller@ff760000} 0x69 &{/clock-controller@ff760000} 0x6c &{/clock-controller@ff760000} 0x6d>;
 +		reset-names = "core\0axi\0ahb";
