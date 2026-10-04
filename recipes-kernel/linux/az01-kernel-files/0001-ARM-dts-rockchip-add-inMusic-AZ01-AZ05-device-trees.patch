@@ -17976,7 +17976,7 @@ new file mode 100644
 index 0000000..7abc4a1
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13.dts
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,90 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -18011,6 +18011,59 @@ index 0000000..7abc4a1
 +		ili2118@26 {
 +			touchscreen-inverted-y;
 +			touchscreen-swapped-x-y;
++		};
++	};
++};
++
++/*
++ * JP13's user-facing USB port sits behind a Microchip USB5537B hub
++ * (i2c@ff140000, address 0x2d). The vendor brings it up from a "virtual-mux"
++ * driver that applies a device tree overlay at runtime: the state-internal
++ * fragments set the hub node to status = "okay" and apply the usb-reset-pin
++ * and usb-sel-int pin groups. Mainline has no such driver, so the hub node
++ * stays disabled, nUSB_HUB_RESET is never deasserted, and nothing downstream
++ * can enumerate. Measured on an SC6000: EHCI ff500000 carries only its own
++ * root hub, and /sys/bus/platform/devices/usb-mux has no driver bound.
++ *
++ * We own this DTS, so express the resolved "internal" state statically rather
++ * than reimplement a runtime overlay mechanism for a choice that is fixed at
++ * design time.
++ *
++ * The pin groups carry the levels themselves - usb-sel-int is pcfg-output-high
++ * and usb-sel-ext pcfg-output-low - but a pinctrl "default" state is only
++ * applied when a driver probes the node, and nothing binds smsc,usb5537b. So
++ * drive both lines with gpio-hogs, which are applied by gpiolib when the gpio
++ * controller probes and need no driver at all.
++ *
++ *   USB_MUX_CTRL    gpio8 pin 1  (gpio-249)  high = internal, low = external
++ *
++ * Only the mux line is hogged. nUSB_HUB_RESET (gpio7 pin 2) is left to
++ * az01-usb-hub via the node's reset-gpios, so that driver can start the hub
++ * from a known state.
++ *
++ * This brings the hub up but not yet the ports: it attaches reporting a
++ * single downstream port, and not one of the three populated ones. See
++ * az01-usb-hub for why, and for what has been ruled out.
++ */
++/ {
++	pinctrl {
++
++		gpio@ff7f0000 {
++
++			usb-mux-internal-hog {
++				gpio-hog;
++				gpios = <0x01 0x00>;
++				output-high;
++			};
++		};
++	};
++};
++
++/ {
++	i2c@ff140000 {
++
++		usb5537@2d {
++			status = "okay";
 +		};
 +	};
 +};
