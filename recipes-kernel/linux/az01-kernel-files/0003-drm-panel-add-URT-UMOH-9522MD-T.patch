@@ -87,7 +87,7 @@ new file mode 100644
 index 000000000000..c3330bf1a671
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-urt-umoh-9522md-t.c
-@@ -0,0 +1,1436 @@
+@@ -0,0 +1,1711 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * URT UMOH-9522MD-T MIPI-DSI panel, as fitted to inMusic AZ01 boards
@@ -192,7 +192,15 @@ index 000000000000..c3330bf1a671
 + * and is what has been running on hardware, so it is left alone.)
 + */
 +static const struct drm_display_mode p080md_mode = {
-+	.clock		= 72927,
++	/*
++	 * 73000, not u-boot's 72927. Read straight out of the vendor kernel's
++	 * drm_display_mode for this panel (clock 0x00011d28, 800/877/901/925,
++	 * 1280/1298/1302/1314, flags 0). dw-mipi-dsi derives the PHY lane rate
++	 * and its PLL dividers from mode->clock, so even a 0.1% difference can
++	 * select a divider that will not lock - which presents as a configured
++	 * panel that never produces a vblank.
++	 */
++	.clock		= 73000,
 +	.hdisplay	= 800,
 +	.hsync_start	= 877,
 +	.hsync_end	= 901,
@@ -241,6 +249,13 @@ index 000000000000..c3330bf1a671
 +	unsigned int ncmds;
 +	const struct drm_display_mode *mode;
 +	bool paged;
++	/*
++	 * Leave the panel exactly as the bootloader set it up: no reset pulse,
++	 * no register upload. Set for panels whose table we have not verified
++	 * on real hardware - sending a wrong sequence to a panel u-boot has
++	 * already configured turns a working display black.
++	 */
++	bool inherit_bootloader;
 +};
 +
 +static const struct umoh9522_init_cmd umoh9522_init[] = {
@@ -1204,6 +1219,219 @@ index 000000000000..c3330bf1a671
 +	{ UMOH_WRITE, 0xd5, 0x01 },
 +};
 +
++static const struct umoh9522_init_cmd u9399md4t_init[] = {
++	{ UMOH_WRITE, 0xe1, 0x93 },
++	{ UMOH_WRITE, 0xe2, 0x65 },
++	{ UMOH_WRITE, 0xe3, 0xf8 },
++	{ UMOH_WRITE, 0x80, 0x03 },
++	{ UMOH_WRITE, 0xe0, 0x01 },
++	{ UMOH_WRITE, 0x00, 0x00 },
++	{ UMOH_WRITE, 0x17, 0x00 },
++	{ UMOH_WRITE, 0x18, 0xd7 },
++	{ UMOH_WRITE, 0x19, 0x00 },
++	{ UMOH_WRITE, 0x1a, 0x00 },
++	{ UMOH_WRITE, 0x1b, 0xd7 },
++	{ UMOH_WRITE, 0x1c, 0x00 },
++	{ UMOH_WRITE, 0x24, 0xfe },
++	{ UMOH_WRITE, 0x25, 0x30 },
++	{ UMOH_WRITE, 0x35, 0x27 },
++	{ UMOH_WRITE, 0x37, 0x59 },
++	{ UMOH_WRITE, 0x38, 0x05 },
++	{ UMOH_WRITE, 0x39, 0x00 },
++	{ UMOH_WRITE, 0x3a, 0x07 },
++	{ UMOH_WRITE, 0x3c, 0x78 },
++	{ UMOH_WRITE, 0x3d, 0xff },
++	{ UMOH_WRITE, 0x3e, 0xff },
++	{ UMOH_WRITE, 0x3f, 0xff },
++	{ UMOH_WRITE, 0x40, 0x06 },
++	{ UMOH_WRITE, 0x41, 0xa0 },
++	{ UMOH_WRITE, 0x43, 0x14 },
++	{ UMOH_WRITE, 0x44, 0x0f },
++	{ UMOH_WRITE, 0x45, 0x30 },
++	{ UMOH_WRITE, 0x4b, 0x00 },
++	{ UMOH_WRITE, 0x55, 0x0f },
++	{ UMOH_WRITE, 0x57, 0xa9 },
++	{ UMOH_WRITE, 0x59, 0x0e },
++	{ UMOH_WRITE, 0x5a, 0x37 },
++	{ UMOH_WRITE, 0x5b, 0x13 },
++	{ UMOH_WRITE, 0x5d, 0x7f },
++	{ UMOH_WRITE, 0x5e, 0x6d },
++	{ UMOH_WRITE, 0x5f, 0x62 },
++	{ UMOH_WRITE, 0x60, 0x57 },
++	{ UMOH_WRITE, 0x61, 0x57 },
++	{ UMOH_WRITE, 0x62, 0x4c },
++	{ UMOH_WRITE, 0x63, 0x54 },
++	{ UMOH_WRITE, 0x64, 0x40 },
++	{ UMOH_WRITE, 0x65, 0x5b },
++	{ UMOH_WRITE, 0x66, 0x58 },
++	{ UMOH_WRITE, 0x67, 0x53 },
++	{ UMOH_WRITE, 0x68, 0x69 },
++	{ UMOH_WRITE, 0x69, 0x51 },
++	{ UMOH_WRITE, 0x6a, 0x56 },
++	{ UMOH_WRITE, 0x6b, 0x41 },
++	{ UMOH_WRITE, 0x6c, 0x3f },
++	{ UMOH_WRITE, 0x6d, 0x35 },
++	{ UMOH_WRITE, 0x6e, 0x27 },
++	{ UMOH_WRITE, 0x6f, 0x10 },
++	{ UMOH_WRITE, 0x70, 0x7f },
++	{ UMOH_WRITE, 0x71, 0x6d },
++	{ UMOH_WRITE, 0x72, 0x62 },
++	{ UMOH_WRITE, 0x73, 0x57 },
++	{ UMOH_WRITE, 0x74, 0x57 },
++	{ UMOH_WRITE, 0x75, 0x4c },
++	{ UMOH_WRITE, 0x76, 0x54 },
++	{ UMOH_WRITE, 0x77, 0x40 },
++	{ UMOH_WRITE, 0x78, 0x5b },
++	{ UMOH_WRITE, 0x79, 0x58 },
++	{ UMOH_WRITE, 0x7a, 0x53 },
++	{ UMOH_WRITE, 0x7b, 0x69 },
++	{ UMOH_WRITE, 0x7c, 0x51 },
++	{ UMOH_WRITE, 0x7d, 0x56 },
++	{ UMOH_WRITE, 0x7e, 0x41 },
++	{ UMOH_WRITE, 0x7f, 0x3f },
++	{ UMOH_WRITE, 0x80, 0x35 },
++	{ UMOH_WRITE, 0x81, 0x27 },
++	{ UMOH_WRITE, 0x82, 0x10 },
++	{ UMOH_WRITE, 0xb8, 0x00 },
++	{ UMOH_WRITE, 0xb9, 0x08 },
++	{ UMOH_WRITE, 0xba, 0x00 },
++	{ UMOH_WRITE, 0xbb, 0x08 },
++	{ UMOH_WRITE, 0xe0, 0x02 },
++	{ UMOH_WRITE, 0x00, 0x5e },
++	{ UMOH_WRITE, 0x01, 0x5f },
++	{ UMOH_WRITE, 0x02, 0x57 },
++	{ UMOH_WRITE, 0x03, 0x77 },
++	{ UMOH_WRITE, 0x04, 0x48 },
++	{ UMOH_WRITE, 0x05, 0x4a },
++	{ UMOH_WRITE, 0x06, 0x44 },
++	{ UMOH_WRITE, 0x07, 0x46 },
++	{ UMOH_WRITE, 0x08, 0x40 },
++	{ UMOH_WRITE, 0x09, 0x5f },
++	{ UMOH_WRITE, 0x0a, 0x5f },
++	{ UMOH_WRITE, 0x0b, 0x5f },
++	{ UMOH_WRITE, 0x0c, 0x5f },
++	{ UMOH_WRITE, 0x0d, 0x5f },
++	{ UMOH_WRITE, 0x0e, 0x5f },
++	{ UMOH_WRITE, 0x0f, 0x42 },
++	{ UMOH_WRITE, 0x10, 0x5f },
++	{ UMOH_WRITE, 0x11, 0x5f },
++	{ UMOH_WRITE, 0x12, 0x5f },
++	{ UMOH_WRITE, 0x13, 0x5f },
++	{ UMOH_WRITE, 0x14, 0x5f },
++	{ UMOH_WRITE, 0x15, 0x5f },
++	{ UMOH_WRITE, 0x16, 0x5e },
++	{ UMOH_WRITE, 0x17, 0x5f },
++	{ UMOH_WRITE, 0x18, 0x57 },
++	{ UMOH_WRITE, 0x19, 0x77 },
++	{ UMOH_WRITE, 0x1a, 0x49 },
++	{ UMOH_WRITE, 0x1b, 0x4b },
++	{ UMOH_WRITE, 0x1c, 0x45 },
++	{ UMOH_WRITE, 0x1d, 0x47 },
++	{ UMOH_WRITE, 0x1e, 0x41 },
++	{ UMOH_WRITE, 0x1f, 0x5f },
++	{ UMOH_WRITE, 0x20, 0x5f },
++	{ UMOH_WRITE, 0x21, 0x5f },
++	{ UMOH_WRITE, 0x22, 0x5f },
++	{ UMOH_WRITE, 0x23, 0x5f },
++	{ UMOH_WRITE, 0x24, 0x5f },
++	{ UMOH_WRITE, 0x25, 0x43 },
++	{ UMOH_WRITE, 0x26, 0x5f },
++	{ UMOH_WRITE, 0x27, 0x5f },
++	{ UMOH_WRITE, 0x28, 0x5f },
++	{ UMOH_WRITE, 0x29, 0x5f },
++	{ UMOH_WRITE, 0x2a, 0x5f },
++	{ UMOH_WRITE, 0x2b, 0x5f },
++	{ UMOH_WRITE, 0x2c, 0x1f },
++	{ UMOH_WRITE, 0x2d, 0x1e },
++	{ UMOH_WRITE, 0x2e, 0x17 },
++	{ UMOH_WRITE, 0x2f, 0x37 },
++	{ UMOH_WRITE, 0x30, 0x07 },
++	{ UMOH_WRITE, 0x31, 0x05 },
++	{ UMOH_WRITE, 0x32, 0x0b },
++	{ UMOH_WRITE, 0x33, 0x09 },
++	{ UMOH_WRITE, 0x34, 0x03 },
++	{ UMOH_WRITE, 0x35, 0x1f },
++	{ UMOH_WRITE, 0x36, 0x1f },
++	{ UMOH_WRITE, 0x37, 0x1f },
++	{ UMOH_WRITE, 0x38, 0x1f },
++	{ UMOH_WRITE, 0x39, 0x1f },
++	{ UMOH_WRITE, 0x3a, 0x1f },
++	{ UMOH_WRITE, 0x3b, 0x01 },
++	{ UMOH_WRITE, 0x3c, 0x1f },
++	{ UMOH_WRITE, 0x3d, 0x1f },
++	{ UMOH_WRITE, 0x3e, 0x1f },
++	{ UMOH_WRITE, 0x3f, 0x1f },
++	{ UMOH_WRITE, 0x40, 0x1f },
++	{ UMOH_WRITE, 0x41, 0x1f },
++	{ UMOH_WRITE, 0x42, 0x1f },
++	{ UMOH_WRITE, 0x43, 0x1e },
++	{ UMOH_WRITE, 0x44, 0x17 },
++	{ UMOH_WRITE, 0x45, 0x37 },
++	{ UMOH_WRITE, 0x46, 0x06 },
++	{ UMOH_WRITE, 0x47, 0x04 },
++	{ UMOH_WRITE, 0x48, 0x0a },
++	{ UMOH_WRITE, 0x49, 0x08 },
++	{ UMOH_WRITE, 0x4a, 0x02 },
++	{ UMOH_WRITE, 0x4b, 0x1f },
++	{ UMOH_WRITE, 0x4c, 0x1f },
++	{ UMOH_WRITE, 0x4d, 0x1f },
++	{ UMOH_WRITE, 0x4e, 0x1f },
++	{ UMOH_WRITE, 0x4f, 0x1f },
++	{ UMOH_WRITE, 0x50, 0x1f },
++	{ UMOH_WRITE, 0x51, 0x00 },
++	{ UMOH_WRITE, 0x52, 0x1f },
++	{ UMOH_WRITE, 0x53, 0x1f },
++	{ UMOH_WRITE, 0x54, 0x1f },
++	{ UMOH_WRITE, 0x55, 0x1f },
++	{ UMOH_WRITE, 0x56, 0x1f },
++	{ UMOH_WRITE, 0x57, 0x1f },
++	{ UMOH_WRITE, 0x58, 0x40 },
++	{ UMOH_WRITE, 0x59, 0x00 },
++	{ UMOH_WRITE, 0x5a, 0x00 },
++	{ UMOH_WRITE, 0x5b, 0x30 },
++	{ UMOH_WRITE, 0x5c, 0x05 },
++	{ UMOH_WRITE, 0x5d, 0x30 },
++	{ UMOH_WRITE, 0x5e, 0x01 },
++	{ UMOH_WRITE, 0x5f, 0x02 },
++	{ UMOH_WRITE, 0x60, 0x30 },
++	{ UMOH_WRITE, 0x61, 0x03 },
++	{ UMOH_WRITE, 0x62, 0x04 },
++	{ UMOH_WRITE, 0x63, 0x03 },
++	{ UMOH_WRITE, 0x64, 0x62 },
++	{ UMOH_WRITE, 0x65, 0x75 },
++	{ UMOH_WRITE, 0x66, 0x0d },
++	{ UMOH_WRITE, 0x67, 0x73 },
++	{ UMOH_WRITE, 0x68, 0x09 },
++	{ UMOH_WRITE, 0x69, 0x62 },
++	{ UMOH_WRITE, 0x6a, 0x62 },
++	{ UMOH_WRITE, 0x6b, 0x08 },
++	{ UMOH_WRITE, 0x6c, 0x00 },
++	{ UMOH_WRITE, 0x6d, 0x08 },
++	{ UMOH_WRITE, 0x6e, 0x08 },
++	{ UMOH_WRITE, 0x6f, 0x88 },
++	{ UMOH_WRITE, 0x70, 0x00 },
++	{ UMOH_WRITE, 0x71, 0x00 },
++	{ UMOH_WRITE, 0x72, 0x06 },
++	{ UMOH_WRITE, 0x73, 0x7b },
++	{ UMOH_WRITE, 0x74, 0x00 },
++	{ UMOH_WRITE, 0x75, 0xbc },
++	{ UMOH_WRITE, 0x76, 0x00 },
++	{ UMOH_WRITE, 0x77, 0x0d },
++	{ UMOH_WRITE, 0x78, 0x24 },
++	{ UMOH_WRITE, 0x79, 0x00 },
++	{ UMOH_WRITE, 0x7a, 0x00 },
++	{ UMOH_WRITE, 0x7b, 0x00 },
++	{ UMOH_WRITE, 0x7c, 0x00 },
++	{ UMOH_WRITE, 0x7d, 0x03 },
++	{ UMOH_WRITE, 0x7e, 0x7b },
++	{ UMOH_WRITE, 0xe0, 0x04 },
++	{ UMOH_WRITE, 0x02, 0x23 },
++	{ UMOH_WRITE, 0x09, 0x11 },
++	{ UMOH_WRITE, 0xb5, 0xf0 },
++	{ UMOH_WRITE, 0xb7, 0xeb },
++	{ UMOH_WRITE, 0x9b, 0x21 },
++};
++
 +static const struct umoh9522_desc umoh9522_desc = {
 +	.cmds = umoh9522_init, .ncmds = ARRAY_SIZE(umoh9522_init),
 +	.mode = &umoh9522_mode, .paged = true,
@@ -1227,11 +1455,31 @@ index 000000000000..c3330bf1a671
 +static const struct umoh9522_desc p080md_desc = {
 +	.cmds = p080md_init, .ncmds = ARRAY_SIZE(p080md_init),
 +	.mode = &p080md_mode, .paged = false,
++	/*
++	 * Confirmed against the vendor kernel's own driver for this panel: the
++	 * 95 pairs above are identical to its table, byte for byte, and its
++	 * probe sets the same lanes/format/mode_flags we now use. So send it.
++	 */
 +};
 +
 +static const struct umoh9522_desc u9399md_desc = {
 +	.cmds = u9399md_init, .ncmds = ARRAY_SIZE(u9399md_init),
 +	.mode = &u9399md_mode, .paged = false,
++};
++
++/*
++ * urt,umo-9399md-4t. Not the same panel as -1t: a different 210-entry register
++ * list, and it shares umoh9522_mode rather than u9399md_mode (u-boot gives both
++ * 800/877/901/925 1280/1292/1296/1314, identical to the Prime GO's panel).
++ *
++ * Added because a JC11S was observed booting with exactly this compatible in
++ * its *runtime* device tree, while the shipped tree for that board says
++ * urt,umo-p080md-t - u-boot rewrote it. So -4t is a value the bootloader
++ * really emits and nothing of ours bound it.
++ */
++static const struct umoh9522_desc u9399md4t_desc = {
++	.cmds = u9399md4t_init, .ncmds = ARRAY_SIZE(u9399md4t_init),
++	.mode = &umoh9522_mode, .paged = false,
 +};
 +
 +static int umoh9522_send(struct mipi_dsi_device *dsi,
@@ -1282,7 +1530,7 @@ index 000000000000..c3330bf1a671
 +	 * earlier version copied u-boot's 0-then-1 ordering onto the reset line
 +	 * and produced exactly that black screen.
 +	 */
-+	if (!p->initialised) {
++	if (!p->initialised && !p->desc->inherit_bootloader) {
 +		msleep(15);
 +		gpiod_set_value_cansleep(p->reset, 1);	/* assert */
 +		msleep(20);
@@ -1296,14 +1544,26 @@ index 000000000000..c3330bf1a671
 +						     "init command %zu failed\n", i);
 +		}
 +
-+		/* Tail, also the vendor's: page 0, tear on, out of sleep. */
++		/*
++		 * Tail, matching the vendor exactly.
++		 *
++		 * The page-0 select and set_tear_on belong to the ILI9881C-class
++		 * panels only. u-boot's Format A tail has both, and the Prime GO
++		 * works with them. The register-list panels are a different
++		 * controller: the vendor kernel's prepare for urt,umo-p080md-t
++		 * does reset -> 95 writes -> exit_sleep_mode (DCS 0x11) ->
++		 * msleep(120) -> set_display_on (DCS 0x29), and sends no
++		 * set_tear_on at all. Sending 0x35 to a panel that does not
++		 * implement it made prepare() bail out here.
++		 */
 +		ret = 0;
-+		if (p->desc->paged)
++		if (p->desc->paged) {
 +			ret = umoh9522_send(p->dsi,
 +					    &(struct umoh9522_init_cmd){ UMOH_PAGE, 0x00, 0x00 });
-+		if (!ret)
-+			ret = mipi_dsi_dcs_set_tear_on(p->dsi,
-+						       MIPI_DSI_DCS_TEAR_MODE_VBLANK);
++			if (!ret)
++				ret = mipi_dsi_dcs_set_tear_on(p->dsi,
++							       MIPI_DSI_DCS_TEAR_MODE_VBLANK);
++		}
 +		if (!ret)
 +			ret = mipi_dsi_dcs_exit_sleep_mode(p->dsi);
 +		if (ret)
@@ -1452,6 +1712,7 @@ index 000000000000..c3330bf1a671
 +		return dev_err_probe(dev, PTR_ERR(p->reset),
 +				     "failed to get the reset gpio\n");
 +
++
 +	ret = of_drm_get_panel_orientation(dev->of_node, &p->orientation);
 +	if (ret)
 +		return dev_err_probe(dev, ret, "failed to read the rotation\n");
@@ -1462,7 +1723,20 @@ index 000000000000..c3330bf1a671
 +
 +	dsi->lanes = 4;
 +	dsi->format = MIPI_DSI_FMT_RGB888;
-+	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
++	/*
++	 * Sync-pulse, not burst. Read out of the vendor kernel's own panel
++	 * driver, whose probe opens with
++	 *
++	 *   mov  r3, #4      str r3, [r0, #0x214]   dsi->lanes = 4
++	 *   mov  r3, #0      str r3, [r0, #0x218]   dsi->format = RGB888
++	 *   movw r3, #0x805  str r3, [r0, #0x21c]   dsi->mode_flags
++	 *
++	 * and 0x805 is VIDEO | VIDEO_SYNC_PULSE | LPM. We had VIDEO_BURST,
++	 * which the Prime GO's panel tolerates but the SC6000's does not: the
++	 * link comes up, the panel is configured, and the VOP still never sees
++	 * a vblank, so every atomic commit ends in "flip_done timed out".
++	 */
++	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 +			  MIPI_DSI_MODE_LPM;
 +
 +	drm_panel_init(&p->panel, dev, &umoh9522_funcs,
@@ -1508,6 +1782,7 @@ index 000000000000..c3330bf1a671
 +	{ .compatible = "wayton,mfc101gc-ihd3-1",       .data = &mfc101gc_desc },
 +	{ .compatible = "urt,umo-p080md-t",             .data = &p080md_desc },
 +	{ .compatible = "urt,umo-9399md-1t",            .data = &u9399md_desc },
++	{ .compatible = "urt,umo-9399md-4t",            .data = &u9399md4t_desc },
 +	{ }
 +};
 +MODULE_DEVICE_TABLE(of, umoh9522_of_match);
