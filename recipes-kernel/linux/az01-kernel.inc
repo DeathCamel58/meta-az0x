@@ -103,3 +103,8 @@ SRC_URI:append:az01 = " file://0006-pinctrl-rockchip-accept-and-ignore-slew-rate
 # for the USB 2.0 parts. See the driver header for why it must not reset the
 # hub.
 SRC_URI:append:az01 = " file://0007-usb-misc-add-the-inMusic-AZ01-USB-hub-attach-driver.patch"
+
+# The signed-boot machine needs a kernel FIT, not the zImage-in-rootfs shape
+# the other boards use. Gated internally on the az0x-signed override; a no-op
+# everywhere else. See the include for the FIT shape it emits.
+require az0x-signed-fit.inc

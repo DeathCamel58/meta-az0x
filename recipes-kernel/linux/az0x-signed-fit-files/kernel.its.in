@@ -1,0 +1,67 @@
+/dts-v1/;
+
+/ {
+	description = "AZ0x from-source kernel FIT for @@BOARD_DTB@@";
+	#address-cells = <1>;
+
+	images {
+		kernel {
+			description = "Linux kernel";
+			data = /incbin/("@@KERNEL_IMAGE@@");
+			type = "kernel";
+			arch = "arm";
+			os = "linux";
+			compression = "none";
+			load = <@@KERNEL_LOADADDRESS@@>;
+			entry = <@@KERNEL_ENTRYPOINT@@>;
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+
+		fdt-@@BOARD_DTB@@ {
+			description = "@@BOARD_DTB@@";
+			data = /incbin/("@@BOARD_DTB_FILE@@");
+			type = "flat_dt";
+			arch = "arm";
+			compression = "none";
+			load = <@@FDT_LOADADDRESS@@>;
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+
+		fdt-cmdline {
+			description = "cmdline overlay";
+			data = /incbin/("@@CMDLINE_FILE@@");
+			type = "flat_dt";
+			arch = "arm";
+			compression = "none";
+			load = <@@CMDLINE_LOADADDRESS@@>;
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+	};
+
+	configurations {
+		default = "conf-@@BOARD_DTB@@";
+
+		conf-@@BOARD_DTB@@ {
+			description = "@@BOARD_DTB@@";
+			kernel = "kernel";
+			fdt = "fdt-@@BOARD_DTB@@";
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+
+		cmdline {
+			description = "cmdline";
+			fdt = "fdt-cmdline";
+			hash-1 {
+				algo = "sha256";
+			};
+		};
+	};
+};
