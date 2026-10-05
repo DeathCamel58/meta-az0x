@@ -75,6 +75,18 @@ assembly in the kernel's own deploy sstate, and needs no extra task or
 override and on `AZ0X_FIT_ENABLE`, so no other machine changes behaviour; on the
 prebuilt path the containing recipes are not built at all.
 
+## Verified so far
+
+- `bitbake virtual/kernel` with `AZ0X_KERNEL_PROVIDER = "yocto-rt"` built
+  `linux-yocto-rt` 6.6.151-rt31 (`SMP PREEMPT_RT`), and the deployed
+  `kernel.fit` had the image and configuration nodes listed above, with
+  `fdt-cmdline` carrying `root=PARTLABEL=denonlinux rootwait rw`.
+- That kernel's zImage with `rk3288-az01-jc11s.dtb` and a USB rootfs, run in
+  an rk3288 emulator in direct-Linux mode, reached a `ttyS3` login prompt.
+  That mode bypasses u-boot, so it says nothing about the FIT or its
+  signature check.
+- The FIT itself has **not** been booted on hardware through this path.
+
 ## How to validate on a full build
 
 On a real build tree:
@@ -123,8 +135,10 @@ from-source kernel (see Risks).
   gets the FIT onto the device must accept an unsigned FIT in this shape.
 - **`rootwait rw` and console.** `AZ0X_FIT_BOOTARGS` defaults to
   `root=PARTLABEL=denonlinux rootwait rw` with no `console=`, relying on the
-  device tree's `/chosen/stdout-path`. If an explicit `console=` is needed,
-  this is the variable to set.
+  jc11s device tree's `/chosen/stdout-path = "serial3:115200n8"` (uart3,
+  `ttyS3`, which matches the vendor's own `console=ttyS3,115200n8`). The
+  machine's getty is on `ttyS3` for the same reason. If an explicit
+  `console=` is needed, this is the variable to set.
 - **Kernel size.** A from-source RT kernel must still fit the fixed-size
   `kernel` partition. Watch the deployed `kernel.fit` size.
 
@@ -132,5 +146,3 @@ from-source kernel (see Risks).
 
 1. Does the signing step need the FIT to already contain `signature-0` nodes
    (so it can be re-pointed) rather than a clean unsigned FIT?
-2. Which console does the from-source DTB's `stdout-path` resolve to on this
-   board?
