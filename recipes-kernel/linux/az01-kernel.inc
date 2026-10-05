@@ -96,3 +96,10 @@ SRC_URI:append:az01 = " file://0006-pinctrl-rockchip-accept-and-ignore-slew-rate
 # for the USB 2.0 parts. See the driver header for why it must not reset the
 # hub.
 SRC_URI:append:az01 = " file://0007-usb-misc-add-the-inMusic-AZ01-USB-hub-attach-driver.patch"
+
+# poky.conf appends features/debug/debug-kernel.scc to KERNEL_EXTRA_FEATURES,
+# for its SPDX kernel source manifests. That fragment is applied after the
+# defconfig above and turns DWARF debug info back on, which undoes the
+# defconfig's CONFIG_DEBUG_INFO_NONE. This is an appliance kernel; drop it.
+# (DEBUG_KERNEL itself stays - EXPERT selects it.)
+KERNEL_FEATURES:remove:az01 = "features/debug/debug-kernel.scc"
