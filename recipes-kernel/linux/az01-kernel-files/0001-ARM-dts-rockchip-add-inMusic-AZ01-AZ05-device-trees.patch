@@ -10813,17 +10813,17 @@ index 0000000..81a0059
 + * from the hardware it detects - the same fixup it applies to the touch
 + * controllers' status. A JC11S was observed running urt,umo-9399md-4t.
 + *
-+ * That matters because the two are not variants: p080md-t is 800x1280 at
-+ * 73 MHz and 9399md-4t is 1200x1920 at 165.28 MHz, with a different init
-+ * sequence. Driving one as the other leaves the panel dark while the display
-+ * pipeline looks healthy - connector connected, rockchip-drm bound, fbcon
-+ * attached - because everything on the SoC side is in fact working.
++ * Name it explicitly so the same driver path is taken whether or not u-boot
++ * fixes this dtb up - it may not, when the dtb comes from a FIT we build.
 + *
-+ * Name it explicitly so the right panel is selected even when the dtb comes
-+ * from a signed FIT that u-boot does not fix up.
++ * The driver binds 9399md-4t with inherit_bootloader: u-boot has already
++ * brought the panel up (its splash displays), and mainline re-sending an init
++ * sequence left it dark at the correct 800x1280 mode - with the 9399md-4t
++ * table and with the p080md-t one alike. So mainline keeps u-boot's panel
++ * setup and only drives the video mode.
 + *
-+ * If a JC11S turns out to fit the p080md-t after all, drop this block rather
-+ * than changing it - the dtsi default is then already correct.
++ * Do not simply drop this block to fall back to the dtsi's p080md-t: that
++ * descriptor re-sends its init table, which is the case observed dark.
 + */
 +/ {
 +	mipi@ff960000 {
