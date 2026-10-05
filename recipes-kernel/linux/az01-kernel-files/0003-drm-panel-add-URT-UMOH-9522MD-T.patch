@@ -1479,7 +1479,7 @@ index 000000000000..c3330bf1a671
 + */
 +static const struct umoh9522_desc u9399md4t_desc = {
 +	.cmds = u9399md4t_init, .ncmds = ARRAY_SIZE(u9399md4t_init),
-+	.mode = &umoh9522_mode, .paged = false,
++	.mode = &umoh9522_mode, .paged = false, .inherit_bootloader = true,
 +};
 +
 +static int umoh9522_send(struct mipi_dsi_device *dsi,

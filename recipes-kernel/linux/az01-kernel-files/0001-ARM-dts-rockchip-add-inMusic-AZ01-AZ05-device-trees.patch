@@ -10790,7 +10790,7 @@ new file mode 100644
 index 0000000..81a0059
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s.dts
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,42 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/dts-v1/;
 +
@@ -10806,6 +10806,33 @@ index 0000000..81a0059
 +#include "rk3288-az01-regulators-jp.dtsi"
 +#include "rk3288-az01-touch-ili2110.dtsi"
 +#include "rk3288-az01-usb-hub.dtsi"
++
++/*
++ * The panel. This board's dtsi names urt,umo-p080md-t, which is what the
++ * vendor ships statically, but u-boot rewrites panel@0's compatible at boot
++ * from the hardware it detects - the same fixup it applies to the touch
++ * controllers' status. A JC11S was observed running urt,umo-9399md-4t.
++ *
++ * Name it explicitly so the same driver path is taken whether or not u-boot
++ * fixes this dtb up - it may not, when the dtb comes from a FIT we build.
++ *
++ * The driver binds 9399md-4t with inherit_bootloader: u-boot has already
++ * brought the panel up (its splash displays), and mainline re-sending an init
++ * sequence left it dark at the correct 800x1280 mode - with the 9399md-4t
++ * table and with the p080md-t one alike. So mainline keeps u-boot's panel
++ * setup and only drives the video mode.
++ *
++ * Do not simply drop this block to fall back to the dtsi's p080md-t: that
++ * descriptor re-sends its init table, which is the case observed dark.
++ */
++/ {
++	mipi@ff960000 {
++
++		panel@0 {
++			compatible = "urt,umo-9399md-4t";
++		};
++	};
++};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi
 new file mode 100644
 index 0000000..858d5ba
