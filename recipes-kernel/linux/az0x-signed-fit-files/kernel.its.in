@@ -1,7 +1,7 @@
 /dts-v1/;
 
 / {
-	description = "AZ0x from-source PREEMPT-RT kernel FIT for @@BOARD_DTB@@";
+	description = "AZ0x from-source kernel FIT for @@BOARD_DTB@@";
 	#address-cells = <1>;
 
 	images {

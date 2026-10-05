@@ -8,7 +8,9 @@ rootfs. Its u-boot loads a FIT named `kernel.fit` from the dedicated ext2
 vendor path that FIT is inMusic's own signed blob and there is nothing to build.
 
 The project's goal is to run a **from-source PREEMPT-RT kernel** on this board
-too. Signing the kernel and getting it onto the device is outside this layer's
+too. The same FIT assembly also works with the standard `linux-yocto` provider;
+its image description does not assume either preemption model. Signing the
+kernel and getting it onto the device is outside this layer's
 scope and is left to an external boot-activation tool. What was missing on the
 Yocto side was the FIT in the first place: a from-source provider built a plain
 zImage, and the image guard refused a non-prebuilt kernel for this machine.
