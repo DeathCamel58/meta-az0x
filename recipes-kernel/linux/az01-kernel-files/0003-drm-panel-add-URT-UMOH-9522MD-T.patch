@@ -87,7 +87,7 @@ new file mode 100644
 index 000000000000..c3330bf1a671
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-urt-umoh-9522md-t.c
-@@ -0,0 +1,1684 @@
+@@ -0,0 +1,1691 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * URT UMOH-9522MD-T MIPI-DSI panel, as fitted to inMusic AZ01 boards
@@ -1542,12 +1542,19 @@ index 000000000000..c3330bf1a671
 +				ret = mipi_dsi_dcs_set_tear_on(p->dsi,
 +							       MIPI_DSI_DCS_TEAR_MODE_VBLANK);
 +		}
-+		if (!ret)
-+			ret = mipi_dsi_dcs_exit_sleep_mode(p->dsi);
 +		if (ret)
 +			return ret;
-+
 +	}
++
++	/*
++	 * Wake the panel on every path, including inherit_bootloader. disable()
++	 * sleeps it unconditionally, so skipping this would leave a panel that
++	 * inherits u-boot's init asleep after its first blank - set_display_on
++	 * does nothing to a sleeping panel, and the screen stays black.
++	 */
++	ret = mipi_dsi_dcs_exit_sleep_mode(p->dsi);
++	if (ret)
++		return ret;
 +
 +	p->prepared = true;
 +	return 0;
