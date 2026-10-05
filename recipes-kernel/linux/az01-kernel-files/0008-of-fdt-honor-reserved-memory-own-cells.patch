@@ -1,0 +1,101 @@
+From de2b0fbc362668f943f383759066effabd8058d1 Mon Sep 17 00:00:00 2001
+From: Dylan Corrales <deathcamel58@gmail.com>
+Date: Mon, 5 Oct 2026 09:06:50 -0400
+Subject: [PATCH] of: fdt: honor /reserved-memory's own address and size cells
+
+The AZ01 device trees declare /reserved-memory with #address-cells and
+#size-cells of 1 under a root of 2. Both are the vendor's, byte for byte -
+this is what ships on the device, and the bootloader writes a reg into one
+of the children at boot, so the format is not ours to change.
+
+Mainline rejects that in two places, both assuming the node's cells equal
+the root's:
+
+  __reserved_mem_check_root()   requires an exact match, and bails out of
+                                fdt_scan_reserved_mem() for the whole node
+  __reserved_mem_reserve_reg()  computes t_len from the root's cells, so an
+                                8-byte reg under a 2/2 root is 16 bytes short
+                                and the parse loop never runs
+
+The result on an SC6000 is 'Reserved memory: unsupported node format,
+ignoring' and *no* child reserved - including the framebuffer region the
+bootloader hands over, 0x7f400000 + 12 MiB. CMA is then placed at
+0x7e000000, overlapping it, because CMA lands at the top of RAM and nothing
+reserved it. The vendor's own kernel parses the same tree and reserves both
+regions.
+
+Read the cells the node actually declares and use those, which is what the
+DT spec says governs a node's children. Values other than 1 or 2 are still
+refused, since dt_mem_next_cell() handles no others.
+
+Only the static (reg) path needs this. The dynamic (size) path in
+of_reserved_mem.c also uses the root's cells, but a node with a reg never
+reaches it.
+
+Upstream-Status: Pending [the tree this works around is vendor firmware]
+---
+ drivers/of/fdt.c | 31 ++++++++++++++++++++++++++-----
+ 1 file changed, 26 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/of/fdt.c b/drivers/of/fdt.c
+index 366fbdc56dec..96d2e3827db0 100644
+--- a/drivers/of/fdt.c
++++ b/drivers/of/fdt.c
+@@ -498,10 +498,21 @@ static int __init early_init_dt_reserve_memory(phys_addr_t base,
+ /*
+  * __reserved_mem_reserve_reg() - reserve all memory described in 'reg' property
+  */
++/*
++ * Cells governing /reserved-memory's children. The DT spec says a node's
++ * #address-cells/#size-cells govern its children, but this code historically
++ * assumed they equal the root's and rejected the node outright otherwise.
++ * Some shipping firmware - inMusic AZ01, whose bootloader also writes a reg
++ * into one of these children at boot - declares /reserved-memory as 1/1 under
++ * a 2/2 root. Honor what the node actually declares.
++ */
++static int dt_resv_addr_cells __initdata;
++static int dt_resv_size_cells __initdata;
++
+ static int __init __reserved_mem_reserve_reg(unsigned long node,
+ 					     const char *uname)
+ {
+-	int t_len = (dt_root_addr_cells + dt_root_size_cells) * sizeof(__be32);
++	int t_len = (dt_resv_addr_cells + dt_resv_size_cells) * sizeof(__be32);
+ 	phys_addr_t base, size;
+ 	int len;
+ 	const __be32 *prop;
+@@ -521,8 +532,8 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
+ 	nomap = of_get_flat_dt_prop(node, "no-map", NULL) != NULL;
+ 
+ 	while (len >= t_len) {
+-		base = dt_mem_next_cell(dt_root_addr_cells, &prop);
+-		size = dt_mem_next_cell(dt_root_size_cells, &prop);
++		base = dt_mem_next_cell(dt_resv_addr_cells, &prop);
++		size = dt_mem_next_cell(dt_resv_size_cells, &prop);
+ 
+ 		if (size &&
+ 		    early_init_dt_reserve_memory(base, size, nomap) == 0)
+@@ -551,11 +562,21 @@ static int __init __reserved_mem_check_root(unsigned long node)
+ 	const __be32 *prop;
+ 
+ 	prop = of_get_flat_dt_prop(node, "#size-cells", NULL);
+-	if (!prop || be32_to_cpup(prop) != dt_root_size_cells)
++	if (!prop)
+ 		return -EINVAL;
++	dt_resv_size_cells = be32_to_cpup(prop);
+ 
+ 	prop = of_get_flat_dt_prop(node, "#address-cells", NULL);
+-	if (!prop || be32_to_cpup(prop) != dt_root_addr_cells)
++	if (!prop)
++		return -EINVAL;
++	dt_resv_addr_cells = be32_to_cpup(prop);
++
++	/*
++	 * dt_mem_next_cell() handles 1 or 2 cells; anything else would read
++	 * past the property or silently truncate, so refuse it as before.
++	 */
++	if (dt_resv_addr_cells < 1 || dt_resv_addr_cells > 2 ||
++	    dt_resv_size_cells < 1 || dt_resv_size_cells > 2)
+ 		return -EINVAL;
+ 
+ 	prop = of_get_flat_dt_prop(node, "ranges", NULL);

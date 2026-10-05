@@ -104,6 +104,13 @@ SRC_URI:append:az01 = " file://0006-pinctrl-rockchip-accept-and-ignore-slew-rate
 # hub.
 SRC_URI:append:az01 = " file://0007-usb-misc-add-the-inMusic-AZ01-USB-hub-attach-driver.patch"
 
+# Reserved memory. The vendor device trees declare /reserved-memory with 1/1
+# cells under a 2/2 root, and the bootloader writes a reg into one of its
+# children at boot, so the format is not ours to change. Mainline rejects the
+# whole node, which loses the framebuffer region the bootloader hands over and
+# lets CMA be placed on top of it. See the patch header.
+SRC_URI:append:az01 = " file://0008-of-fdt-honor-reserved-memory-own-cells.patch"
+
 # The signed-boot machine needs a kernel FIT, not the zImage-in-rootfs shape
 # the other boards use. Gated internally on the az0x-signed override; a no-op
 # everywhere else. See the include for the FIT shape it emits.
