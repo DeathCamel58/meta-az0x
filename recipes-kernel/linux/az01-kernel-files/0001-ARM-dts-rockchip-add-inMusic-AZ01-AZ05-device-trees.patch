@@ -24006,7 +24006,7 @@ new file mode 100644
 index 0000000..a1b2c3d
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-usb-hub.dtsi
-@@ -0,0 +1,69 @@
+@@ -0,0 +1,73 @@
 +// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
 +/*
 + * rk3288-az01 option: usb-hub
@@ -24031,9 +24031,14 @@ index 0000000..a1b2c3d
 + *
 + *   USB_MUX_CTRL    gpio8 pin 1  (gpio-249)  high = internal, low = external
 + *
-+ * A gpio-hog rather than pinctrl, because a pinctrl "default" state is only
-+ * applied when a driver probes the node, and the levels live in the pin groups
-+ * themselves (usb-sel-int is pcfg-output-high, usb-sel-ext pcfg-output-low).
++ * USB_MUX_CTRL is driven high from boot by hanging the usb-sel-int pin group
++ * (pcfg-output-high) off the USB host controllers as their default pinctrl.
++ * It is deliberately NOT a gpio-hog: a hog would own gpio-249 and prevent
++ * userspace from selecting the external host in computer mode. The hub must
++ * be internal for boot, but its mux line must remain requestable for handoff
++ * to an external computer. A pinctrl state that no driver applies never takes
++ * effect, so it rides on the host controllers, which probe before the hub
++ * enumerates.
 + *
 + * nUSB_HUB_RESET (gpio7 pin 2) is deliberately NOT hogged. It is left to
 + * az01-usb-hub through the node's reset-gpios, because that driver has to
@@ -24048,8 +24053,8 @@ index 0000000..a1b2c3d
 + * NOT included by hg03, hg03-c or mg01. They fit the hub, but their trees
 + * never declare gpio@ff7f0000 as a gpio-controller - that comes from
 + * rk3288-az01-opt-acv5s.dtsi, which those three do not include. Pulling this
-+ * file in there would have dtc invent an empty gpio@ff7f0000 and the hog would
-+ * silently do nothing, which is worse than leaving them alone. Sort out where
++ * file in there would have dtc invent an empty gpio@ff7f0000 and the pinctrl
++ * would silently do nothing, which is worse than leaving them alone. Sort out
 + * their mux line really lives before wiring them up.
 + *
 + * Include this LAST in a board .dts - it overrides status on a node the board
@@ -24057,24 +24062,23 @@ index 0000000..a1b2c3d
 + */
 +
 +/ {
-+	pinctrl {
-+
-+		gpio@ff7f0000 {
-+
-+			usb-mux-internal-hog {
-+				gpio-hog;
-+				gpios = <0x01 0x00>;
-+				output-high;
-+			};
-+		};
-+	};
-+
 +	i2c@ff140000 {
 +
 +		usb5537@2d {
 +			status = "okay";
 +		};
 +	};
++};
++
++/* Default to the onboard host while leaving the mux line requestable. */
++&{/usb@ff500000} {
++	pinctrl-names = "default";
++	pinctrl-0 = <&{/pinctrl/usb-hub/usb-sel-int}>;
++};
++
++&{/usb@ff520000} {
++	pinctrl-names = "default";
++	pinctrl-0 = <&{/pinctrl/usb-hub/usb-sel-int}>;
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01.dtsi
 new file mode 100644
@@ -37898,4 +37902,3 @@ index 0000000..a8b20fd
 +};
 -- 
 2.43.0
-
