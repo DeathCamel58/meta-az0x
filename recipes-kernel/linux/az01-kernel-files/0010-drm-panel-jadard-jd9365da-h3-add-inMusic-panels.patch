@@ -1,4 +1,4 @@
-From 6a0e1f5401342a5099f3946178ae74741d7f7785 Mon Sep 17 00:00:00 2001
+From 97013ecdf96669b818d7ead6573528fc97e2992d Mon Sep 17 00:00:00 2001
 From: Dylan Corrales <deathcamel58@gmail.com>
 Date: Tue, 6 Oct 2026 11:10:49 -0400
 Subject: [PATCH] drm/panel: jadard-jd9365da-h3: Add the inMusic panels
@@ -10,7 +10,8 @@ bootloader sends, replayed unchanged; the two table-driven ones are
 followed by the page 0 select and tearing-effect enable its driver
 appends. Timings and DSI flags are the vendor's, except that
 9399md-4t runs at 73000 kHz rather than u-boot's 72927, as the vendor
-kernel does.
+kernel does. At 72927 a Prime 4+ came up with its color channels
+rotated.
 
 Supporting them needs five driver changes. The first four are
 equivalent to later upstream commits, which do not apply to this kernel
@@ -21,8 +22,11 @@ as they stand:
   power-off (upstream a8972d5a49b4 and 095c8e61f4c7).
 - Send the init sequence, sleep-out and display-on from prepare(),
   before the DSI host starts the video stream, instead of from enable()
-  (upstream 97d1f449c359 and the change before it). Sent after video
-  had started, a Prime 4+ came up with its color channels rotated.
+  (upstream 97d1f449c359 and the change before it), and set
+  prepare_prev_first so that the DSI host is up when prepare() runs
+  (upstream b55a4b5d4769). Sent after video had started, a Prime 4+
+  came up with its picture rolled; without prepare_prev_first, the
+  sequence goes out before the host is up and the panel stays dark.
 - Panel orientation from the "rotation" property (upstream
   e1c550898f75).
 - Per-panel DSI mode flags, as upstream later allowed (eb019688f2a9);
@@ -32,11 +36,11 @@ as they stand:
 
 Upstream-Status: Inappropriate [adapted backports plus vendor board support]
 ---
- .../gpu/drm/panel/panel-jadard-jd9365da-h3.c  | 971 +++++++++++++++++-
- 1 file changed, 929 insertions(+), 42 deletions(-)
+ .../gpu/drm/panel/panel-jadard-jd9365da-h3.c  | 973 +++++++++++++++++-
+ 1 file changed, 931 insertions(+), 42 deletions(-)
 
 diff --git a/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c b/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c
-index 4879835..92a65ef 100644
+index 4879835fe101..bf5d6dda598a 100644
 --- a/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c
 +++ b/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c
 @@ -31,6 +31,7 @@ struct jadard_panel_desc {
@@ -104,7 +108,7 @@ index 4879835..92a65ef 100644
  	int ret;
  
  	ret = regulator_enable(jadard->vccio);
-@@ -110,23 +83,46 @@ static int jadard_prepare(struct drm_panel *panel)
+@@ -110,23 +83,45 @@ static int jadard_prepare(struct drm_panel *panel)
  	if (ret)
  		return ret;
  
@@ -126,9 +130,8 @@ index 4879835..92a65ef 100644
 +	 * video stream, as it does in mainline since commit 97d1f449c359
 +	 * ("drm/panel: jd9365da: Move "exit sleep mode" and "set display on"
 +	 * cmds"). Sent from enable() instead, it reaches a panel that is already
-+	 * receiving video, and an inMusic Prime 4+ came up with every pixel's
-+	 * color channels rotated: red showed as blue, green as red, blue as
-+	 * green.
++	 * receiving video, and an inMusic Prime 4+ came up with its picture
++	 * rolled.
 +	 */
 +	for (i = 0; i < desc->num_init_cmds; i++) {
 +		const struct jadard_init_cmd *cmd = &desc->init_cmds[i];
@@ -156,7 +159,7 @@ index 4879835..92a65ef 100644
  	msleep(120);
  
  	regulator_disable(jadard->vdd);
-@@ -159,12 +155,19 @@ static int jadard_get_modes(struct drm_panel *panel,
+@@ -159,12 +154,19 @@ static int jadard_get_modes(struct drm_panel *panel,
  	return 1;
  }
  
@@ -177,7 +180,7 @@ index 4879835..92a65ef 100644
  };
  
  static const struct jadard_init_cmd radxa_display_8hd_ad002_init_cmds[] = {
-@@ -584,6 +587,861 @@ static const struct jadard_panel_desc cz101b4001_desc = {
+@@ -584,6 +586,862 @@ static const struct jadard_panel_desc cz101b4001_desc = {
  	.num_init_cmds = ARRAY_SIZE(cz101b4001_init_cmds),
  };
  
@@ -588,7 +591,8 @@ index 4879835..92a65ef 100644
 +		 * 73000, not u-boot's 72927: what the vendor kernel runs, and
 +		 * what this panel ran correctly at when Linux inherited
 +		 * u-boot's setup. dw-mipi-dsi derives its PHY PLL settings from
-+		 * this clock.
++		 * this clock; at 72927 a Prime 4+ came up with its color
++		 * channels rotated.
 +		 */
 +		.clock		= 73000,
 +
@@ -1082,7 +1086,16 @@ index 4879835..92a65ef 100644
  	drm_panel_init(&jadard->panel, dev, &jadard_funcs,
  		       DRM_MODE_CONNECTOR_DSI);
  
-@@ -660,6 +1531,22 @@ static const struct of_device_id jadard_of_match[] = {
+@@ -626,6 +1497,8 @@ static int jadard_dsi_probe(struct mipi_dsi_device *dsi)
+ 	if (ret)
+ 		return ret;
+ 
++	jadard->panel.prepare_prev_first = true;
++
+ 	drm_panel_add(&jadard->panel);
+ 
+ 	mipi_dsi_set_drvdata(dsi, jadard);
+@@ -660,6 +1533,22 @@ static const struct of_device_id jadard_of_match[] = {
  		.compatible = "radxa,display-8hd-ad002",
  		.data = &radxa_display_8hd_ad002_desc
  	},
