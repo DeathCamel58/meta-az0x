@@ -70,10 +70,11 @@ SRC_URI:append:az01 = " file://0001-ARM-dts-rockchip-add-inMusic-AZ01-AZ05-devic
 # defers forever until that supply registers.
 SRC_URI:append:az01 = " file://0002-power-supply-add-inMusic-AZ01-DC-jack-driver.patch"
 
-# The DSI panel. Nothing in-tree drives it, and without a drm_panel the whole
-# display pipeline stays down: rockchip-drm is component-based and will not
-# finish binding until the panel registers, so there is no card0 at all.
-SRC_URI:append:az01 = " file://0003-drm-panel-add-URT-UMOH-9522MD-T.patch"
+# The SC6000's DSI panel, a Himax HX8260. Nothing in-tree drives it, and
+# without a drm_panel the whole display pipeline stays down: rockchip-drm is
+# component-based and will not finish binding until the panel registers, so
+# there is no card0 at all.
+SRC_URI:append:az01 = " file://0003-drm-panel-add-a-Himax-HX8260-panel-driver.patch"
 
 # Audio. Two drivers, because the hardware is split that way: a codec with no
 # control interface (master clock plus enable/mute/reset GPIOs) and a machine
