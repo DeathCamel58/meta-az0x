@@ -115,6 +115,10 @@ SRC_URI:append:az01 = " file://0008-of-fdt-honor-reserved-memory-own-cells.patch
 # in-tree ILI9881C driver rather than ours: one patch per driver.
 SRC_URI:append:az01 = " file://0009-drm-panel-ilitek-ili9881c-add-inMusic-panels.patch"
 
+# The JD9365-based panels, into the in-tree JD9365 driver - one patch per
+# driver. It also carries the driver fixes they need on this kernel.
+SRC_URI:append:az01 = " file://0010-drm-panel-jadard-jd9365da-h3-add-inMusic-panels.patch"
+
 # The signed-boot machine needs a kernel FIT, not the zImage-in-rootfs shape
 # the other boards use. Gated internally on the az0x-signed override; a no-op
 # everywhere else. See the include for the FIT shape it emits.
