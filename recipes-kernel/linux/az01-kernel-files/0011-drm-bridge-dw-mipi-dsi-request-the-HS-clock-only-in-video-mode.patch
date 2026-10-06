@@ -1,0 +1,52 @@
+From 7fb7f792391c492cb87d5632cc9bfb88b5d83a71 Mon Sep 17 00:00:00 2001
+From: Ryan Grenz <info@ryangrenz.com>
+Date: Tue, 6 Oct 2026 23:26:36 +0100
+Subject: [PATCH] drm/bridge: dw-mipi-dsi: request the HS clock only in
+ video mode
+
+dw_mipi_dsi_set_mode() requests the continuous high-speed clock in
+command mode as well as in video mode. A panel that sets
+prepare_prev_first is reset and sent its init sequence in that command
+mode window, after the host has already put the clock lane into HS. The
+JD9365 panel on an inMusic Prime 4+ never comes out of that: the
+backlight is on, every command is accepted without error, and the
+panel stays dark.
+
+u-boot's port of this driver, which initialises the same panel
+correctly before every boot, leaves the clock lane in low-power in
+command mode and requests HS only for video. Do the same here, so the
+panel receives its low-power init sequence with the clock lane idle and
+sees the clock lane enter HS when video starts.
+
+Panels that send their init sequence from enable(), in video mode, are
+unaffected, as are panels without prepare_prev_first, whose prepare()
+runs before the host enters command mode.
+
+Upstream-Status: Inappropriate [not yet tested beyond the Prime 4+; mainline still requests HS in command mode]
+---
+ drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c b/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c
+index 04d4a1a10698..70706a91af88 100644
+--- a/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c
++++ b/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c
+@@ -582,9 +582,12 @@ static void dw_mipi_dsi_set_mode(struct dw_mipi_dsi *dsi,
+ 		dsi_write(dsi, DSI_MODE_CFG, ENABLE_CMD_MODE);
+ 	}
+ 
+-	val = PHY_TXREQUESTCLKHS;
+-	if (dsi->mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS)
+-		val |= AUTO_CLKLANE_CTRL;
++	val = 0;
++	if (mode_flags & MIPI_DSI_MODE_VIDEO) {
++		val = PHY_TXREQUESTCLKHS;
++		if (dsi->mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS)
++			val |= AUTO_CLKLANE_CTRL;
++	}
+ 	dsi_write(dsi, DSI_LPCLK_CTRL, val);
+ 
+ 	dsi_write(dsi, DSI_PWR_UP, POWERUP);
+-- 
+2.43.0
+

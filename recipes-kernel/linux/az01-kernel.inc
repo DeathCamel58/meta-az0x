@@ -120,6 +120,10 @@ SRC_URI:append:az01 = " file://0009-drm-panel-ilitek-ili9881c-add-inMusic-panels
 # driver. It also carries the driver fixes they need on this kernel.
 SRC_URI:append:az01 = " file://0010-drm-panel-jadard-jd9365da-h3-add-inMusic-panels.patch"
 
+# The DSI host: request the HS clock only in video mode, as u-boot does,
+# so a panel initialised from prepare() sees the clock lane enter HS.
+SRC_URI:append:az01 = " file://0011-drm-bridge-dw-mipi-dsi-request-the-HS-clock-only-in-video-mode.patch"
+
 # The signed-boot machine needs a kernel FIT, not the zImage-in-rootfs shape
 # the other boards use. Gated internally on the az0x-signed override; a no-op
 # everywhere else. See the include for the FIT shape it emits.
