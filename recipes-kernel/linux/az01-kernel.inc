@@ -111,6 +111,10 @@ SRC_URI:append:az01 = " file://0007-usb-misc-add-the-inMusic-AZ01-USB-hub-attach
 # lets CMA be placed on top of it. See the patch header.
 SRC_URI:append:az01 = " file://0008-of-fdt-honor-reserved-memory-own-cells.patch"
 
+# The ILI9881C-based panels - the Prime GO's among them. They go into the
+# in-tree ILI9881C driver rather than ours: one patch per driver.
+SRC_URI:append:az01 = " file://0009-drm-panel-ilitek-ili9881c-add-inMusic-panels.patch"
+
 # The signed-boot machine needs a kernel FIT, not the zImage-in-rootfs shape
 # the other boards use. Gated internally on the az0x-signed override; a no-op
 # everywhere else. See the include for the FIT shape it emits.
