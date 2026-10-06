@@ -1,0 +1,1023 @@
+From 9cad61b1350565bca299b3d59052f6b854c6ea29 Mon Sep 17 00:00:00 2001
+From: Dylan Corrales <deathcamel58@gmail.com>
+Date: Tue, 6 Oct 2026 11:10:49 -0400
+Subject: [PATCH] drm/panel: jadard-jd9365da-h3: Add the inMusic panels
+
+Add the four JD9365-based 800x1280 MIPI-DSI panels inMusic fits to its
+AZ01 devices: urt,umo-9399md-1t, urt,umo-9399md-4t, urt,umoh-9344md-t
+and urt,umoh-9522md-1t. The init sequences are the ones the vendor's
+bootloader sends, replayed unchanged; the two table-driven ones are
+followed by the page 0 select and tearing-effect enable its driver
+appends. Timings and DSI flags are the vendor's.
+
+Supporting them needs four driver changes. The first three are
+equivalent to later upstream commits, which do not apply to this kernel
+as they stand:
+
+- Reset polarity: assert reset with 1 and release it with 0, so prepare
+  no longer leaves the panel held in reset, and reset is released before
+  power-off (upstream a8972d5a49b4 and 095c8e61f4c7).
+- Panel orientation from the "rotation" property (upstream
+  e1c550898f75).
+- Per-panel DSI mode flags, as upstream later allowed (eb019688f2a9);
+  panels that set none keep the driver's default.
+- With no vdd-supply in the device tree, use the "power" supply as vdd.
+  The inMusic device trees predate the vdd/vccio binding.
+
+Upstream-Status: Inappropriate [adapted backports plus vendor board support]
+---
+ .../gpu/drm/panel/panel-jadard-jd9365da-h3.c  | 904 +++++++++++++++++-
+ 1 file changed, 896 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c b/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c
+index 4879835..e9fd0f0 100644
+--- a/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c
++++ b/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c
+@@ -31,6 +31,7 @@ struct jadard_panel_desc {
+ 	enum mipi_dsi_pixel_format format;
+ 	const struct jadard_init_cmd *init_cmds;
+ 	u32 num_init_cmds;
++	unsigned long mode_flags;	/* 0: the driver's default */
+ };
+ 
+ struct jadard {
+@@ -41,6 +42,7 @@ struct jadard {
+ 	struct regulator *vdd;
+ 	struct regulator *vccio;
+ 	struct gpio_desc *reset;
++	enum drm_panel_orientation orientation;
+ };
+ 
+ static inline struct jadard *panel_to_jadard(struct drm_panel *panel)
+@@ -110,13 +112,13 @@ static int jadard_prepare(struct drm_panel *panel)
+ 	if (ret)
+ 		return ret;
+ 
+-	gpiod_set_value(jadard->reset, 1);
++	gpiod_set_value(jadard->reset, 0);
+ 	msleep(5);
+ 
+-	gpiod_set_value(jadard->reset, 0);
++	gpiod_set_value(jadard->reset, 1);
+ 	msleep(10);
+ 
+-	gpiod_set_value(jadard->reset, 1);
++	gpiod_set_value(jadard->reset, 0);
+ 	msleep(120);
+ 
+ 	return 0;
+@@ -126,7 +128,7 @@ static int jadard_unprepare(struct drm_panel *panel)
+ {
+ 	struct jadard *jadard = panel_to_jadard(panel);
+ 
+-	gpiod_set_value(jadard->reset, 1);
++	gpiod_set_value(jadard->reset, 0);
+ 	msleep(120);
+ 
+ 	regulator_disable(jadard->vdd);
+@@ -159,12 +161,20 @@ static int jadard_get_modes(struct drm_panel *panel,
+ 	return 1;
+ }
+ 
++static enum drm_panel_orientation jadard_panel_get_orientation(struct drm_panel *panel)
++{
++	struct jadard *jadard = panel_to_jadard(panel);
++
++	return jadard->orientation;
++}
++
+ static const struct drm_panel_funcs jadard_funcs = {
+ 	.disable = jadard_disable,
+ 	.unprepare = jadard_unprepare,
+ 	.prepare = jadard_prepare,
+ 	.enable = jadard_enable,
+ 	.get_modes = jadard_get_modes,
++	.get_orientation = jadard_panel_get_orientation,
+ };
+ 
+ static const struct jadard_init_cmd radxa_display_8hd_ad002_init_cmds[] = {
+@@ -584,6 +594,855 @@ static const struct jadard_panel_desc cz101b4001_desc = {
+ 	.num_init_cmds = ARRAY_SIZE(cz101b4001_init_cmds),
+ };
+ 
++/*
++ * The inMusic panels. The sequences are the ones the vendor's bootloader
++ * sends, replayed unchanged, followed - for the table-driven ones - by the
++ * page 0 select and tearing-effect enable its driver appends. Timings and
++ * DSI flags are the vendor's; the physical sizes are not known.
++ */
++
++static const struct jadard_init_cmd u9399md1t_init_cmds[] = {
++	{ .data = { 0xE0, 0x00 } }, /* Page 0 */
++	{ .data = { 0xE1, 0x93 } },
++	{ .data = { 0xE2, 0x65 } },
++	{ .data = { 0xE3, 0xF8 } },
++	{ .data = { 0x80, 0x03 } },
++	{ .data = { 0xE0, 0x01 } }, /* Page 1 */
++	{ .data = { 0x00, 0x00 } },
++	{ .data = { 0x01, 0x6F } },
++	{ .data = { 0x17, 0x00 } },
++	{ .data = { 0x18, 0xAF } },
++	{ .data = { 0x19, 0x01 } },
++	{ .data = { 0x1A, 0x00 } },
++	{ .data = { 0x1B, 0xAF } },
++	{ .data = { 0x1C, 0x01 } },
++	{ .data = { 0x1F, 0x3E } },
++	{ .data = { 0x20, 0x28 } },
++	{ .data = { 0x21, 0x28 } },
++	{ .data = { 0x22, 0x7E } },
++	{ .data = { 0x35, 0x26 } },
++	{ .data = { 0x37, 0x09 } },
++	{ .data = { 0x38, 0x04 } },
++	{ .data = { 0x39, 0x00 } },
++	{ .data = { 0x3A, 0x01 } },
++	{ .data = { 0x3C, 0x7C } },
++	{ .data = { 0x3D, 0xFF } },
++	{ .data = { 0x3E, 0xFF } },
++	{ .data = { 0x3F, 0x7F } },
++	{ .data = { 0x40, 0x06 } },
++	{ .data = { 0x41, 0xA0 } },
++	{ .data = { 0x42, 0x81 } },
++	{ .data = { 0x43, 0x08 } },
++	{ .data = { 0x44, 0x0B } },
++	{ .data = { 0x45, 0x28 } },
++	{ .data = { 0x55, 0x0F } },
++	{ .data = { 0x57, 0x69 } },
++	{ .data = { 0x59, 0x0A } },
++	{ .data = { 0x5A, 0x28 } },
++	{ .data = { 0x5B, 0x14 } },
++	{ .data = { 0x5D, 0x7C } },
++	{ .data = { 0x5E, 0x65 } },
++	{ .data = { 0x5F, 0x55 } },
++	{ .data = { 0x60, 0x47 } },
++	{ .data = { 0x61, 0x43 } },
++	{ .data = { 0x62, 0x32 } },
++	{ .data = { 0x63, 0x34 } },
++	{ .data = { 0x64, 0x1C } },
++	{ .data = { 0x65, 0x33 } },
++	{ .data = { 0x66, 0x31 } },
++	{ .data = { 0x67, 0x30 } },
++	{ .data = { 0x68, 0x4E } },
++	{ .data = { 0x69, 0x3D } },
++	{ .data = { 0x6A, 0x44 } },
++	{ .data = { 0x6B, 0x35 } },
++	{ .data = { 0x6C, 0x31 } },
++	{ .data = { 0x6D, 0x23 } },
++	{ .data = { 0x6E, 0x11 } },
++	{ .data = { 0x6F, 0x00 } },
++	{ .data = { 0x70, 0x7C } },
++	{ .data = { 0x71, 0x65 } },
++	{ .data = { 0x72, 0x55 } },
++	{ .data = { 0x73, 0x47 } },
++	{ .data = { 0x74, 0x43 } },
++	{ .data = { 0x75, 0x32 } },
++	{ .data = { 0x76, 0x34 } },
++	{ .data = { 0x77, 0x1C } },
++	{ .data = { 0x78, 0x33 } },
++	{ .data = { 0x79, 0x31 } },
++	{ .data = { 0x7A, 0x30 } },
++	{ .data = { 0x7B, 0x4E } },
++	{ .data = { 0x7C, 0x3C } },
++	{ .data = { 0x7D, 0x44 } },
++	{ .data = { 0x7E, 0x35 } },
++	{ .data = { 0x7F, 0x31 } },
++	{ .data = { 0x80, 0x23 } },
++	{ .data = { 0x81, 0x11 } },
++	{ .data = { 0x82, 0x00 } },
++	{ .data = { 0xE0, 0x02 } }, /* Page 2 */
++	{ .data = { 0x00, 0x1E } },
++	{ .data = { 0x01, 0x1E } },
++	{ .data = { 0x02, 0x41 } },
++	{ .data = { 0x03, 0x41 } },
++	{ .data = { 0x04, 0x43 } },
++	{ .data = { 0x05, 0x43 } },
++	{ .data = { 0x06, 0x1F } },
++	{ .data = { 0x07, 0x1F } },
++	{ .data = { 0x08, 0x35 } },
++	{ .data = { 0x09, 0x1F } },
++	{ .data = { 0x0A, 0x15 } },
++	{ .data = { 0x0B, 0x15 } },
++	{ .data = { 0x0C, 0x47 } },
++	{ .data = { 0x0D, 0x47 } },
++	{ .data = { 0x0E, 0x47 } },
++	{ .data = { 0x0F, 0x45 } },
++	{ .data = { 0x10, 0x45 } },
++	{ .data = { 0x11, 0x4B } },
++	{ .data = { 0x12, 0x4B } },
++	{ .data = { 0x13, 0x49 } },
++	{ .data = { 0x14, 0x49 } },
++	{ .data = { 0x15, 0x1F } },
++	{ .data = { 0x16, 0x1E } },
++	{ .data = { 0x17, 0x1E } },
++	{ .data = { 0x18, 0x40 } },
++	{ .data = { 0x19, 0x40 } },
++	{ .data = { 0x1A, 0x42 } },
++	{ .data = { 0x1B, 0x42 } },
++	{ .data = { 0x1C, 0x1F } },
++	{ .data = { 0x1D, 0x1F } },
++	{ .data = { 0x1E, 0x35 } },
++	{ .data = { 0x1F, 0x1F } },
++	{ .data = { 0x20, 0x15 } },
++	{ .data = { 0x21, 0x15 } },
++	{ .data = { 0x22, 0x1F } },
++	{ .data = { 0x23, 0x46 } },
++	{ .data = { 0x24, 0x46 } },
++	{ .data = { 0x25, 0x44 } },
++	{ .data = { 0x26, 0x44 } },
++	{ .data = { 0x27, 0x4A } },
++	{ .data = { 0x28, 0x4A } },
++	{ .data = { 0x29, 0x48 } },
++	{ .data = { 0x2A, 0x48 } },
++	{ .data = { 0x2B, 0x1F } },
++	{ .data = { 0x58, 0x40 } },
++	{ .data = { 0x5B, 0x30 } },
++	{ .data = { 0x5C, 0x03 } },
++	{ .data = { 0x5D, 0x30 } },
++	{ .data = { 0x5E, 0x01 } },
++	{ .data = { 0x5F, 0x02 } },
++	{ .data = { 0x63, 0x14 } },
++	{ .data = { 0x64, 0x6A } },
++	{ .data = { 0x67, 0x73 } },
++	{ .data = { 0x68, 0x05 } },
++	{ .data = { 0x69, 0x14 } },
++	{ .data = { 0x6A, 0x6A } },
++	{ .data = { 0x6B, 0x08 } },
++	{ .data = { 0x6C, 0x00 } },
++	{ .data = { 0x6D, 0x00 } },
++	{ .data = { 0x6E, 0x00 } },
++	{ .data = { 0x6F, 0x88 } },
++	{ .data = { 0x77, 0xDD } },
++	{ .data = { 0x79, 0x0E } },
++	{ .data = { 0x7A, 0x03 } },
++	{ .data = { 0x7D, 0x14 } },
++	{ .data = { 0x7E, 0x6A } },
++	{ .data = { 0xE0, 0x04 } }, /* Page 4 */
++	{ .data = { 0x09, 0x11 } },
++	{ .data = { 0x0E, 0x48 } },
++	{ .data = { 0x2B, 0x2B } },
++	{ .data = { 0x2D, 0x03 } },
++	{ .data = { 0x2E, 0x44 } },
++	{ .data = { 0xE0, 0x00 } }, /* Page 0 */
++	{ .data = { 0xE6, 0x02 } },
++	{ .data = { 0xE7, 0x0C } },
++};
++
++static const struct jadard_panel_desc u9399md1t_desc = {
++	.mode = {
++		.clock		= 73000,
++
++		.hdisplay	= 800,
++		.hsync_start	= 800 + 78,
++		.hsync_end	= 800 + 78 + 24,
++		.htotal		= 800 + 78 + 24 + 36,
++
++		.vdisplay	= 1280,
++		.vsync_start	= 1280 + 2,
++		.vsync_end	= 1280 + 2 + 2,
++		.vtotal		= 1280 + 2 + 2 + 6,
++
++		.type		= DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED,
++	},
++	.lanes = 4,
++	.format = MIPI_DSI_FMT_RGB888,
++	.init_cmds = u9399md1t_init_cmds,
++	.num_init_cmds = ARRAY_SIZE(u9399md1t_init_cmds),
++	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
++		      MIPI_DSI_MODE_LPM,
++};
++
++static const struct jadard_init_cmd u9399md4t_init_cmds[] = {
++	{ .data = { 0xE1, 0x93 } },
++	{ .data = { 0xE2, 0x65 } },
++	{ .data = { 0xE3, 0xF8 } },
++	{ .data = { 0x80, 0x03 } },
++	{ .data = { 0xE0, 0x01 } }, /* Page 1 */
++	{ .data = { 0x00, 0x00 } },
++	{ .data = { 0x17, 0x00 } },
++	{ .data = { 0x18, 0xD7 } },
++	{ .data = { 0x19, 0x00 } },
++	{ .data = { 0x1A, 0x00 } },
++	{ .data = { 0x1B, 0xD7 } },
++	{ .data = { 0x1C, 0x00 } },
++	{ .data = { 0x24, 0xFE } },
++	{ .data = { 0x25, 0x30 } },
++	{ .data = { 0x35, 0x27 } },
++	{ .data = { 0x37, 0x59 } },
++	{ .data = { 0x38, 0x05 } },
++	{ .data = { 0x39, 0x00 } },
++	{ .data = { 0x3A, 0x07 } },
++	{ .data = { 0x3C, 0x78 } },
++	{ .data = { 0x3D, 0xFF } },
++	{ .data = { 0x3E, 0xFF } },
++	{ .data = { 0x3F, 0xFF } },
++	{ .data = { 0x40, 0x06 } },
++	{ .data = { 0x41, 0xA0 } },
++	{ .data = { 0x43, 0x14 } },
++	{ .data = { 0x44, 0x0F } },
++	{ .data = { 0x45, 0x30 } },
++	{ .data = { 0x4B, 0x00 } },
++	{ .data = { 0x55, 0x0F } },
++	{ .data = { 0x57, 0xA9 } },
++	{ .data = { 0x59, 0x0E } },
++	{ .data = { 0x5A, 0x37 } },
++	{ .data = { 0x5B, 0x13 } },
++	{ .data = { 0x5D, 0x7F } },
++	{ .data = { 0x5E, 0x6D } },
++	{ .data = { 0x5F, 0x62 } },
++	{ .data = { 0x60, 0x57 } },
++	{ .data = { 0x61, 0x57 } },
++	{ .data = { 0x62, 0x4C } },
++	{ .data = { 0x63, 0x54 } },
++	{ .data = { 0x64, 0x40 } },
++	{ .data = { 0x65, 0x5B } },
++	{ .data = { 0x66, 0x58 } },
++	{ .data = { 0x67, 0x53 } },
++	{ .data = { 0x68, 0x69 } },
++	{ .data = { 0x69, 0x51 } },
++	{ .data = { 0x6A, 0x56 } },
++	{ .data = { 0x6B, 0x41 } },
++	{ .data = { 0x6C, 0x3F } },
++	{ .data = { 0x6D, 0x35 } },
++	{ .data = { 0x6E, 0x27 } },
++	{ .data = { 0x6F, 0x10 } },
++	{ .data = { 0x70, 0x7F } },
++	{ .data = { 0x71, 0x6D } },
++	{ .data = { 0x72, 0x62 } },
++	{ .data = { 0x73, 0x57 } },
++	{ .data = { 0x74, 0x57 } },
++	{ .data = { 0x75, 0x4C } },
++	{ .data = { 0x76, 0x54 } },
++	{ .data = { 0x77, 0x40 } },
++	{ .data = { 0x78, 0x5B } },
++	{ .data = { 0x79, 0x58 } },
++	{ .data = { 0x7A, 0x53 } },
++	{ .data = { 0x7B, 0x69 } },
++	{ .data = { 0x7C, 0x51 } },
++	{ .data = { 0x7D, 0x56 } },
++	{ .data = { 0x7E, 0x41 } },
++	{ .data = { 0x7F, 0x3F } },
++	{ .data = { 0x80, 0x35 } },
++	{ .data = { 0x81, 0x27 } },
++	{ .data = { 0x82, 0x10 } },
++	{ .data = { 0xB8, 0x00 } },
++	{ .data = { 0xB9, 0x08 } },
++	{ .data = { 0xBA, 0x00 } },
++	{ .data = { 0xBB, 0x08 } },
++	{ .data = { 0xE0, 0x02 } }, /* Page 2 */
++	{ .data = { 0x00, 0x5E } },
++	{ .data = { 0x01, 0x5F } },
++	{ .data = { 0x02, 0x57 } },
++	{ .data = { 0x03, 0x77 } },
++	{ .data = { 0x04, 0x48 } },
++	{ .data = { 0x05, 0x4A } },
++	{ .data = { 0x06, 0x44 } },
++	{ .data = { 0x07, 0x46 } },
++	{ .data = { 0x08, 0x40 } },
++	{ .data = { 0x09, 0x5F } },
++	{ .data = { 0x0A, 0x5F } },
++	{ .data = { 0x0B, 0x5F } },
++	{ .data = { 0x0C, 0x5F } },
++	{ .data = { 0x0D, 0x5F } },
++	{ .data = { 0x0E, 0x5F } },
++	{ .data = { 0x0F, 0x42 } },
++	{ .data = { 0x10, 0x5F } },
++	{ .data = { 0x11, 0x5F } },
++	{ .data = { 0x12, 0x5F } },
++	{ .data = { 0x13, 0x5F } },
++	{ .data = { 0x14, 0x5F } },
++	{ .data = { 0x15, 0x5F } },
++	{ .data = { 0x16, 0x5E } },
++	{ .data = { 0x17, 0x5F } },
++	{ .data = { 0x18, 0x57 } },
++	{ .data = { 0x19, 0x77 } },
++	{ .data = { 0x1A, 0x49 } },
++	{ .data = { 0x1B, 0x4B } },
++	{ .data = { 0x1C, 0x45 } },
++	{ .data = { 0x1D, 0x47 } },
++	{ .data = { 0x1E, 0x41 } },
++	{ .data = { 0x1F, 0x5F } },
++	{ .data = { 0x20, 0x5F } },
++	{ .data = { 0x21, 0x5F } },
++	{ .data = { 0x22, 0x5F } },
++	{ .data = { 0x23, 0x5F } },
++	{ .data = { 0x24, 0x5F } },
++	{ .data = { 0x25, 0x43 } },
++	{ .data = { 0x26, 0x5F } },
++	{ .data = { 0x27, 0x5F } },
++	{ .data = { 0x28, 0x5F } },
++	{ .data = { 0x29, 0x5F } },
++	{ .data = { 0x2A, 0x5F } },
++	{ .data = { 0x2B, 0x5F } },
++	{ .data = { 0x2C, 0x1F } },
++	{ .data = { 0x2D, 0x1E } },
++	{ .data = { 0x2E, 0x17 } },
++	{ .data = { 0x2F, 0x37 } },
++	{ .data = { 0x30, 0x07 } },
++	{ .data = { 0x31, 0x05 } },
++	{ .data = { 0x32, 0x0B } },
++	{ .data = { 0x33, 0x09 } },
++	{ .data = { 0x34, 0x03 } },
++	{ .data = { 0x35, 0x1F } },
++	{ .data = { 0x36, 0x1F } },
++	{ .data = { 0x37, 0x1F } },
++	{ .data = { 0x38, 0x1F } },
++	{ .data = { 0x39, 0x1F } },
++	{ .data = { 0x3A, 0x1F } },
++	{ .data = { 0x3B, 0x01 } },
++	{ .data = { 0x3C, 0x1F } },
++	{ .data = { 0x3D, 0x1F } },
++	{ .data = { 0x3E, 0x1F } },
++	{ .data = { 0x3F, 0x1F } },
++	{ .data = { 0x40, 0x1F } },
++	{ .data = { 0x41, 0x1F } },
++	{ .data = { 0x42, 0x1F } },
++	{ .data = { 0x43, 0x1E } },
++	{ .data = { 0x44, 0x17 } },
++	{ .data = { 0x45, 0x37 } },
++	{ .data = { 0x46, 0x06 } },
++	{ .data = { 0x47, 0x04 } },
++	{ .data = { 0x48, 0x0A } },
++	{ .data = { 0x49, 0x08 } },
++	{ .data = { 0x4A, 0x02 } },
++	{ .data = { 0x4B, 0x1F } },
++	{ .data = { 0x4C, 0x1F } },
++	{ .data = { 0x4D, 0x1F } },
++	{ .data = { 0x4E, 0x1F } },
++	{ .data = { 0x4F, 0x1F } },
++	{ .data = { 0x50, 0x1F } },
++	{ .data = { 0x51, 0x00 } },
++	{ .data = { 0x52, 0x1F } },
++	{ .data = { 0x53, 0x1F } },
++	{ .data = { 0x54, 0x1F } },
++	{ .data = { 0x55, 0x1F } },
++	{ .data = { 0x56, 0x1F } },
++	{ .data = { 0x57, 0x1F } },
++	{ .data = { 0x58, 0x40 } },
++	{ .data = { 0x59, 0x00 } },
++	{ .data = { 0x5A, 0x00 } },
++	{ .data = { 0x5B, 0x30 } },
++	{ .data = { 0x5C, 0x05 } },
++	{ .data = { 0x5D, 0x30 } },
++	{ .data = { 0x5E, 0x01 } },
++	{ .data = { 0x5F, 0x02 } },
++	{ .data = { 0x60, 0x30 } },
++	{ .data = { 0x61, 0x03 } },
++	{ .data = { 0x62, 0x04 } },
++	{ .data = { 0x63, 0x03 } },
++	{ .data = { 0x64, 0x62 } },
++	{ .data = { 0x65, 0x75 } },
++	{ .data = { 0x66, 0x0D } },
++	{ .data = { 0x67, 0x73 } },
++	{ .data = { 0x68, 0x09 } },
++	{ .data = { 0x69, 0x62 } },
++	{ .data = { 0x6A, 0x62 } },
++	{ .data = { 0x6B, 0x08 } },
++	{ .data = { 0x6C, 0x00 } },
++	{ .data = { 0x6D, 0x08 } },
++	{ .data = { 0x6E, 0x08 } },
++	{ .data = { 0x6F, 0x88 } },
++	{ .data = { 0x70, 0x00 } },
++	{ .data = { 0x71, 0x00 } },
++	{ .data = { 0x72, 0x06 } },
++	{ .data = { 0x73, 0x7B } },
++	{ .data = { 0x74, 0x00 } },
++	{ .data = { 0x75, 0xBC } },
++	{ .data = { 0x76, 0x00 } },
++	{ .data = { 0x77, 0x0D } },
++	{ .data = { 0x78, 0x24 } },
++	{ .data = { 0x79, 0x00 } },
++	{ .data = { 0x7A, 0x00 } },
++	{ .data = { 0x7B, 0x00 } },
++	{ .data = { 0x7C, 0x00 } },
++	{ .data = { 0x7D, 0x03 } },
++	{ .data = { 0x7E, 0x7B } },
++	{ .data = { 0xE0, 0x04 } }, /* Page 4 */
++	{ .data = { 0x02, 0x23 } },
++	{ .data = { 0x09, 0x11 } },
++	{ .data = { 0xB5, 0xF0 } },
++	{ .data = { 0xB7, 0xEB } },
++	{ .data = { 0x9B, 0x21 } },
++	{ .data = { 0xE0, 0x00 } }, /* Page 0 */
++	{ .data = { 0x35, 0x00 } }, /* Tearing effect on */
++};
++
++static const struct jadard_panel_desc u9399md4t_desc = {
++	.mode = {
++		.clock		= 72927,
++
++		.hdisplay	= 800,
++		.hsync_start	= 800 + 77,
++		.hsync_end	= 800 + 77 + 24,
++		.htotal		= 800 + 77 + 24 + 24,
++
++		.vdisplay	= 1280,
++		.vsync_start	= 1280 + 12,
++		.vsync_end	= 1280 + 12 + 4,
++		.vtotal		= 1280 + 12 + 4 + 18,
++
++		.type		= DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED,
++	},
++	.lanes = 4,
++	.format = MIPI_DSI_FMT_RGB888,
++	.init_cmds = u9399md4t_init_cmds,
++	.num_init_cmds = ARRAY_SIZE(u9399md4t_init_cmds),
++	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
++		      MIPI_DSI_MODE_LPM,
++};
++
++static const struct jadard_init_cmd umoh9344md_init_cmds[] = {
++	{ .data = { 0xE0, 0x00 } }, /* Page 0 */
++	{ .data = { 0x36, 0x00 } },
++	{ .data = { 0xE1, 0x93 } },
++	{ .data = { 0xE2, 0x65 } },
++	{ .data = { 0xE3, 0xF8 } },
++	{ .data = { 0x80, 0x03 } },
++	{ .data = { 0xE0, 0x04 } }, /* Page 4 */
++	{ .data = { 0x2D, 0x03 } },
++	{ .data = { 0xE0, 0x01 } }, /* Page 1 */
++	{ .data = { 0x00, 0x00 } },
++	{ .data = { 0x01, 0xAA } },
++	{ .data = { 0x03, 0x00 } },
++	{ .data = { 0x04, 0xA8 } },
++	{ .data = { 0x17, 0x00 } },
++	{ .data = { 0x18, 0xB1 } },
++	{ .data = { 0x19, 0x01 } },
++	{ .data = { 0x1A, 0x00 } },
++	{ .data = { 0x1B, 0xB1 } },
++	{ .data = { 0x1C, 0x01 } },
++	{ .data = { 0x1F, 0x3E } },
++	{ .data = { 0x20, 0x2D } },
++	{ .data = { 0x21, 0x2D } },
++	{ .data = { 0x22, 0x7E } },
++	{ .data = { 0x37, 0x59 } },
++	{ .data = { 0x38, 0x05 } },
++	{ .data = { 0x39, 0x00 } },
++	{ .data = { 0x3A, 0x01 } },
++	{ .data = { 0x3C, 0x78 } },
++	{ .data = { 0x3D, 0xFF } },
++	{ .data = { 0x3E, 0xFF } },
++	{ .data = { 0x3F, 0xFF } },
++	{ .data = { 0x40, 0x06 } },
++	{ .data = { 0x41, 0xA0 } },
++	{ .data = { 0x43, 0x04 } },
++	{ .data = { 0x44, 0x04 } },
++	{ .data = { 0x45, 0x24 } },
++	{ .data = { 0x55, 0x0F } },
++	{ .data = { 0x57, 0x89 } },
++	{ .data = { 0x58, 0x0A } },
++	{ .data = { 0x59, 0x0A } },
++	{ .data = { 0x5A, 0x28 } },
++	{ .data = { 0x5B, 0x19 } },
++	{ .data = { 0x5D, 0x7C } },
++	{ .data = { 0x5E, 0x66 } },
++	{ .data = { 0x5F, 0x56 } },
++	{ .data = { 0x60, 0x49 } },
++	{ .data = { 0x61, 0x44 } },
++	{ .data = { 0x62, 0x34 } },
++	{ .data = { 0x63, 0x37 } },
++	{ .data = { 0x64, 0x1F } },
++	{ .data = { 0x65, 0x36 } },
++	{ .data = { 0x66, 0x33 } },
++	{ .data = { 0x67, 0x32 } },
++	{ .data = { 0x68, 0x50 } },
++	{ .data = { 0x69, 0x3D } },
++	{ .data = { 0x6A, 0x43 } },
++	{ .data = { 0x6B, 0x35 } },
++	{ .data = { 0x6C, 0x30 } },
++	{ .data = { 0x6D, 0x24 } },
++	{ .data = { 0x6E, 0x13 } },
++	{ .data = { 0x6F, 0x00 } },
++	{ .data = { 0x70, 0x7C } },
++	{ .data = { 0x71, 0x66 } },
++	{ .data = { 0x72, 0x56 } },
++	{ .data = { 0x73, 0x49 } },
++	{ .data = { 0x74, 0x44 } },
++	{ .data = { 0x75, 0x34 } },
++	{ .data = { 0x76, 0x37 } },
++	{ .data = { 0x77, 0x1F } },
++	{ .data = { 0x78, 0x36 } },
++	{ .data = { 0x79, 0x33 } },
++	{ .data = { 0x7A, 0x32 } },
++	{ .data = { 0x7B, 0x50 } },
++	{ .data = { 0x7C, 0x3D } },
++	{ .data = { 0x7D, 0x43 } },
++	{ .data = { 0x7E, 0x35 } },
++	{ .data = { 0x7F, 0x30 } },
++	{ .data = { 0x80, 0x24 } },
++	{ .data = { 0x81, 0x13 } },
++	{ .data = { 0x82, 0x00 } },
++	{ .data = { 0xE0, 0x02 } }, /* Page 2 */
++	{ .data = { 0x00, 0x45 } },
++	{ .data = { 0x01, 0x45 } },
++	{ .data = { 0x02, 0x44 } },
++	{ .data = { 0x03, 0x44 } },
++	{ .data = { 0x04, 0x47 } },
++	{ .data = { 0x05, 0x47 } },
++	{ .data = { 0x06, 0x46 } },
++	{ .data = { 0x07, 0x46 } },
++	{ .data = { 0x08, 0x40 } },
++	{ .data = { 0x09, 0x1F } },
++	{ .data = { 0x0A, 0x1F } },
++	{ .data = { 0x0B, 0x1F } },
++	{ .data = { 0x0C, 0x1F } },
++	{ .data = { 0x0D, 0x1F } },
++	{ .data = { 0x0E, 0x1F } },
++	{ .data = { 0x0F, 0x01 } },
++	{ .data = { 0x10, 0x1F } },
++	{ .data = { 0x11, 0x1F } },
++	{ .data = { 0x12, 0x1F } },
++	{ .data = { 0x13, 0x1F } },
++	{ .data = { 0x14, 0x1F } },
++	{ .data = { 0x15, 0x1F } },
++	{ .data = { 0x16, 0x45 } },
++	{ .data = { 0x17, 0x45 } },
++	{ .data = { 0x18, 0x44 } },
++	{ .data = { 0x19, 0x44 } },
++	{ .data = { 0x1A, 0x47 } },
++	{ .data = { 0x1B, 0x47 } },
++	{ .data = { 0x1C, 0x46 } },
++	{ .data = { 0x1D, 0x46 } },
++	{ .data = { 0x1E, 0x40 } },
++	{ .data = { 0x1F, 0x1F } },
++	{ .data = { 0x20, 0x1F } },
++	{ .data = { 0x21, 0x1F } },
++	{ .data = { 0x22, 0x1F } },
++	{ .data = { 0x23, 0x1F } },
++	{ .data = { 0x24, 0x1F } },
++	{ .data = { 0x25, 0x01 } },
++	{ .data = { 0x26, 0x1F } },
++	{ .data = { 0x27, 0x1F } },
++	{ .data = { 0x28, 0x1F } },
++	{ .data = { 0x29, 0x1F } },
++	{ .data = { 0x2A, 0x1F } },
++	{ .data = { 0x2B, 0x1F } },
++	{ .data = { 0x58, 0x40 } },
++	{ .data = { 0x5B, 0x10 } },
++	{ .data = { 0x5C, 0x04 } },
++	{ .data = { 0x5D, 0x20 } },
++	{ .data = { 0x5E, 0x01 } },
++	{ .data = { 0x5F, 0x02 } },
++	{ .data = { 0x63, 0x62 } },
++	{ .data = { 0x64, 0x62 } },
++	{ .data = { 0x67, 0x32 } },
++	{ .data = { 0x68, 0x08 } },
++	{ .data = { 0x69, 0x62 } },
++	{ .data = { 0x6A, 0x66 } },
++	{ .data = { 0x6B, 0x08 } },
++	{ .data = { 0x6C, 0x00 } },
++	{ .data = { 0x6D, 0x04 } },
++	{ .data = { 0x6E, 0x04 } },
++	{ .data = { 0x6F, 0x88 } },
++	{ .data = { 0xE0, 0x03 } }, /* Page 3 */
++	{ .data = { 0x98, 0x3E } },
++	{ .data = { 0xE0, 0x04 } }, /* Page 4 */
++	{ .data = { 0x09, 0x10 } },
++	{ .data = { 0x2B, 0x2B } },
++	{ .data = { 0x2E, 0x44 } },
++	{ .data = { 0xE0, 0x00 } }, /* Page 0 */
++	{ .data = { 0xE6, 0x02 } },
++	{ .data = { 0xE7, 0x06 } },
++};
++
++static const struct jadard_panel_desc umoh9344md_desc = {
++	.mode = {
++		.clock		= 72927,
++
++		.hdisplay	= 800,
++		.hsync_start	= 800 + 78,
++		.hsync_end	= 800 + 78 + 24,
++		.htotal		= 800 + 78 + 24 + 36,
++
++		.vdisplay	= 1280,
++		.vsync_start	= 1280 + 4,
++		.vsync_end	= 1280 + 4 + 2,
++		.vtotal		= 1280 + 4 + 2 + 4,
++
++		.type		= DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED,
++	},
++	.lanes = 4,
++	.format = MIPI_DSI_FMT_RGB888,
++	.init_cmds = umoh9344md_init_cmds,
++	.num_init_cmds = ARRAY_SIZE(umoh9344md_init_cmds),
++	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
++		      MIPI_DSI_MODE_LPM,
++};
++
++static const struct jadard_init_cmd umoh9522md1t_init_cmds[] = {
++	{ .data = { 0xE1, 0x93 } },
++	{ .data = { 0xE2, 0x65 } },
++	{ .data = { 0xE3, 0xF8 } },
++	{ .data = { 0x80, 0x03 } },
++	{ .data = { 0x70, 0x10 } },
++	{ .data = { 0x71, 0x13 } },
++	{ .data = { 0x72, 0x06 } },
++	{ .data = { 0x75, 0x03 } },
++	{ .data = { 0xE0, 0x01 } }, /* Page 1 */
++	{ .data = { 0x00, 0x00 } },
++	{ .data = { 0x17, 0x00 } },
++	{ .data = { 0x18, 0xEF } },
++	{ .data = { 0x19, 0x01 } },
++	{ .data = { 0x1A, 0x00 } },
++	{ .data = { 0x1B, 0xEF } },
++	{ .data = { 0x1C, 0x01 } },
++	{ .data = { 0x1F, 0x6B } },
++	{ .data = { 0x20, 0x24 } },
++	{ .data = { 0x21, 0x24 } },
++	{ .data = { 0x22, 0x4E } },
++	{ .data = { 0x24, 0xFE } },
++	{ .data = { 0x37, 0x09 } },
++	{ .data = { 0x38, 0x04 } },
++	{ .data = { 0x39, 0x08 } },
++	{ .data = { 0x3A, 0x12 } },
++	{ .data = { 0x3C, 0x78 } },
++	{ .data = { 0x3D, 0xFF } },
++	{ .data = { 0x3E, 0xFF } },
++	{ .data = { 0x3F, 0x7F } },
++	{ .data = { 0x40, 0x06 } },
++	{ .data = { 0x41, 0xA0 } },
++	{ .data = { 0x43, 0x14 } },
++	{ .data = { 0x44, 0x11 } },
++	{ .data = { 0x45, 0x24 } },
++	{ .data = { 0x55, 0x03 } },
++	{ .data = { 0x56, 0x01 } },
++	{ .data = { 0x57, 0x69 } },
++	{ .data = { 0x58, 0x0A } },
++	{ .data = { 0x59, 0x0A } },
++	{ .data = { 0x5A, 0x29 } },
++	{ .data = { 0x5B, 0x10 } },
++	{ .data = { 0x5D, 0x70 } },
++	{ .data = { 0x5E, 0x57 } },
++	{ .data = { 0x5F, 0x47 } },
++	{ .data = { 0x60, 0x3A } },
++	{ .data = { 0x61, 0x35 } },
++	{ .data = { 0x62, 0x25 } },
++	{ .data = { 0x63, 0x29 } },
++	{ .data = { 0x64, 0x12 } },
++	{ .data = { 0x65, 0x29 } },
++	{ .data = { 0x66, 0x26 } },
++	{ .data = { 0x67, 0x23 } },
++	{ .data = { 0x68, 0x3F } },
++	{ .data = { 0x69, 0x2B } },
++	{ .data = { 0x6A, 0x32 } },
++	{ .data = { 0x6B, 0x24 } },
++	{ .data = { 0x6C, 0x22 } },
++	{ .data = { 0x6D, 0x16 } },
++	{ .data = { 0x6E, 0x09 } },
++	{ .data = { 0x6F, 0x02 } },
++	{ .data = { 0x70, 0x70 } },
++	{ .data = { 0x71, 0x57 } },
++	{ .data = { 0x72, 0x47 } },
++	{ .data = { 0x73, 0x3A } },
++	{ .data = { 0x74, 0x35 } },
++	{ .data = { 0x75, 0x25 } },
++	{ .data = { 0x76, 0x29 } },
++	{ .data = { 0x77, 0x12 } },
++	{ .data = { 0x78, 0x29 } },
++	{ .data = { 0x79, 0x26 } },
++	{ .data = { 0x7A, 0x23 } },
++	{ .data = { 0x7B, 0x3F } },
++	{ .data = { 0x7C, 0x2B } },
++	{ .data = { 0x7D, 0x32 } },
++	{ .data = { 0x7E, 0x24 } },
++	{ .data = { 0x7F, 0x22 } },
++	{ .data = { 0x80, 0x16 } },
++	{ .data = { 0x81, 0x09 } },
++	{ .data = { 0x82, 0x02 } },
++	{ .data = { 0xE0, 0x02 } }, /* Page 2 */
++	{ .data = { 0x00, 0x1E } },
++	{ .data = { 0x01, 0x1F } },
++	{ .data = { 0x02, 0x57 } },
++	{ .data = { 0x03, 0x58 } },
++	{ .data = { 0x04, 0x48 } },
++	{ .data = { 0x05, 0x4A } },
++	{ .data = { 0x06, 0x44 } },
++	{ .data = { 0x07, 0x46 } },
++	{ .data = { 0x08, 0x40 } },
++	{ .data = { 0x09, 0x1F } },
++	{ .data = { 0x0A, 0x1F } },
++	{ .data = { 0x0B, 0x1F } },
++	{ .data = { 0x0C, 0x1F } },
++	{ .data = { 0x0D, 0x1F } },
++	{ .data = { 0x0E, 0x1F } },
++	{ .data = { 0x0F, 0x42 } },
++	{ .data = { 0x10, 0x1F } },
++	{ .data = { 0x11, 0x1F } },
++	{ .data = { 0x12, 0x1F } },
++	{ .data = { 0x13, 0x1F } },
++	{ .data = { 0x14, 0x1F } },
++	{ .data = { 0x15, 0x1F } },
++	{ .data = { 0x16, 0x1E } },
++	{ .data = { 0x17, 0x1F } },
++	{ .data = { 0x18, 0x57 } },
++	{ .data = { 0x19, 0x58 } },
++	{ .data = { 0x1A, 0x49 } },
++	{ .data = { 0x1B, 0x4B } },
++	{ .data = { 0x1C, 0x45 } },
++	{ .data = { 0x1D, 0x47 } },
++	{ .data = { 0x1E, 0x41 } },
++	{ .data = { 0x55, 0x55 } },
++	{ .data = { 0x20, 0x1F } },
++	{ .data = { 0x21, 0x55 } },
++	{ .data = { 0x22, 0x55 } },
++	{ .data = { 0x23, 0x55 } },
++	{ .data = { 0x24, 0x55 } },
++	{ .data = { 0x25, 0x43 } },
++	{ .data = { 0x26, 0x55 } },
++	{ .data = { 0x27, 0x55 } },
++	{ .data = { 0x28, 0x55 } },
++	{ .data = { 0x29, 0x55 } },
++	{ .data = { 0x2A, 0x55 } },
++	{ .data = { 0x2B, 0x55 } },
++	{ .data = { 0x2C, 0x55 } },
++	{ .data = { 0x2D, 0x1E } },
++	{ .data = { 0x2E, 0x17 } },
++	{ .data = { 0x2F, 0x18 } },
++	{ .data = { 0x30, 0x07 } },
++	{ .data = { 0x31, 0x05 } },
++	{ .data = { 0x32, 0x0B } },
++	{ .data = { 0x33, 0x09 } },
++	{ .data = { 0x34, 0x03 } },
++	{ .data = { 0x35, 0x55 } },
++	{ .data = { 0x36, 0x55 } },
++	{ .data = { 0x37, 0x55 } },
++	{ .data = { 0x38, 0x55 } },
++	{ .data = { 0x39, 0x55 } },
++	{ .data = { 0x3A, 0x55 } },
++	{ .data = { 0x3B, 0x01 } },
++	{ .data = { 0x3C, 0x55 } },
++	{ .data = { 0x3D, 0x55 } },
++	{ .data = { 0x3E, 0x55 } },
++	{ .data = { 0x3F, 0x55 } },
++	{ .data = { 0x40, 0x1F } },
++	{ .data = { 0x41, 0x55 } },
++	{ .data = { 0x42, 0x55 } },
++	{ .data = { 0x43, 0x1E } },
++	{ .data = { 0x44, 0x17 } },
++	{ .data = { 0x45, 0x18 } },
++	{ .data = { 0x46, 0x06 } },
++	{ .data = { 0x47, 0x04 } },
++	{ .data = { 0x48, 0x0A } },
++	{ .data = { 0x49, 0x08 } },
++	{ .data = { 0x4A, 0x02 } },
++	{ .data = { 0x4B, 0x55 } },
++	{ .data = { 0x4C, 0x55 } },
++	{ .data = { 0x4D, 0x55 } },
++	{ .data = { 0x4E, 0x55 } },
++	{ .data = { 0x4F, 0x55 } },
++	{ .data = { 0x50, 0x1F } },
++	{ .data = { 0x51, 0x00 } },
++	{ .data = { 0x52, 0x55 } },
++	{ .data = { 0x53, 0x55 } },
++	{ .data = { 0x54, 0x55 } },
++	{ .data = { 0x55, 0x55 } },
++	{ .data = { 0x56, 0x55 } },
++	{ .data = { 0x57, 0x55 } },
++	{ .data = { 0x58, 0x40 } },
++	{ .data = { 0x59, 0x00 } },
++	{ .data = { 0x5A, 0x00 } },
++	{ .data = { 0x5B, 0x30 } },
++	{ .data = { 0x5C, 0x07 } },
++	{ .data = { 0x5D, 0x30 } },
++	{ .data = { 0x5E, 0x01 } },
++	{ .data = { 0x5F, 0x02 } },
++	{ .data = { 0x60, 0x30 } },
++	{ .data = { 0x61, 0x03 } },
++	{ .data = { 0x62, 0x04 } },
++	{ .data = { 0x63, 0x6A } },
++	{ .data = { 0x64, 0x6A } },
++	{ .data = { 0x65, 0x35 } },
++	{ .data = { 0x66, 0x0D } },
++	{ .data = { 0x67, 0x73 } },
++	{ .data = { 0x68, 0x0B } },
++	{ .data = { 0x69, 0x6A } },
++	{ .data = { 0x6A, 0x6A } },
++	{ .data = { 0x6B, 0x08 } },
++	{ .data = { 0x6C, 0x00 } },
++	{ .data = { 0x6D, 0x04 } },
++	{ .data = { 0x6E, 0x00 } },
++	{ .data = { 0x6F, 0x88 } },
++	{ .data = { 0x70, 0x00 } },
++	{ .data = { 0x71, 0x00 } },
++	{ .data = { 0x72, 0x06 } },
++	{ .data = { 0x73, 0x7B } },
++	{ .data = { 0x74, 0x00 } },
++	{ .data = { 0x75, 0xBC } },
++	{ .data = { 0x76, 0x00 } },
++	{ .data = { 0x77, 0x0D } },
++	{ .data = { 0x78, 0x1B } },
++	{ .data = { 0x79, 0x00 } },
++	{ .data = { 0x7A, 0x00 } },
++	{ .data = { 0x7B, 0x00 } },
++	{ .data = { 0x7C, 0x00 } },
++	{ .data = { 0x7D, 0x03 } },
++	{ .data = { 0x7E, 0x7B } },
++	{ .data = { 0xE0, 0x04 } }, /* Page 4 */
++	{ .data = { 0x02, 0x23 } },
++	{ .data = { 0x09, 0x10 } },
++	{ .data = { 0x0E, 0x38 } },
++	{ .data = { 0x36, 0x49 } },
++	{ .data = { 0x2B, 0x08 } },
++	{ .data = { 0x2E, 0x03 } },
++	{ .data = { 0xE0, 0x00 } }, /* Page 0 */
++	{ .data = { 0xE6, 0x02 } },
++	{ .data = { 0xE7, 0x06 } },
++	{ .data = { 0xE0, 0x00 } }, /* Page 0 */
++	{ .data = { 0x35, 0x00 } }, /* Tearing effect on */
++};
++
++static const struct jadard_panel_desc umoh9522md1t_desc = {
++	.mode = {
++		.clock		= 72927,
++
++		.hdisplay	= 800,
++		.hsync_start	= 800 + 77,
++		.hsync_end	= 800 + 77 + 24,
++		.htotal		= 800 + 77 + 24 + 24,
++
++		.vdisplay	= 1280,
++		.vsync_start	= 1280 + 12,
++		.vsync_end	= 1280 + 12 + 4,
++		.vtotal		= 1280 + 12 + 4 + 18,
++
++		.type		= DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED,
++	},
++	.lanes = 4,
++	.format = MIPI_DSI_FMT_RGB888,
++	.init_cmds = umoh9522md1t_init_cmds,
++	.num_init_cmds = ARRAY_SIZE(umoh9522md1t_init_cmds),
++	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
++		      MIPI_DSI_MODE_LPM,
++};
++
+ static int jadard_dsi_probe(struct mipi_dsi_device *dsi)
+ {
+ 	struct device *dev = &dsi->dev;
+@@ -596,18 +1455,27 @@ static int jadard_dsi_probe(struct mipi_dsi_device *dsi)
+ 		return -ENOMEM;
+ 
+ 	desc = of_device_get_match_data(dev);
+-	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+-			  MIPI_DSI_MODE_NO_EOT_PACKET;
++	if (desc->mode_flags)
++		dsi->mode_flags = desc->mode_flags;
++	else
++		dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
++				  MIPI_DSI_MODE_NO_EOT_PACKET;
+ 	dsi->format = desc->format;
+ 	dsi->lanes = desc->lanes;
+ 
+-	jadard->reset = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
++	jadard->reset = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
+ 	if (IS_ERR(jadard->reset)) {
+ 		DRM_DEV_ERROR(&dsi->dev, "failed to get our reset GPIO\n");
+ 		return PTR_ERR(jadard->reset);
+ 	}
+ 
+-	jadard->vdd = devm_regulator_get(dev, "vdd");
++	/*
++	 * The inMusic device trees predate the vdd/vccio binding and name the
++	 * panel supply "power". Use it as vdd when there is no vdd-supply;
++	 * vccio then falls back to a dummy regulator.
++	 */
++	jadard->vdd = devm_regulator_get(dev, of_property_present(dev->of_node, "vdd-supply") ?
++					       "vdd" : "power");
+ 	if (IS_ERR(jadard->vdd)) {
+ 		DRM_DEV_ERROR(&dsi->dev, "failed to get vdd regulator\n");
+ 		return PTR_ERR(jadard->vdd);
+@@ -619,6 +1487,10 @@ static int jadard_dsi_probe(struct mipi_dsi_device *dsi)
+ 		return PTR_ERR(jadard->vccio);
+ 	}
+ 
++	ret = of_drm_get_panel_orientation(dev->of_node, &jadard->orientation);
++	if (ret < 0)
++		return dev_err_probe(dev, ret, "failed to get orientation\n");
++
+ 	drm_panel_init(&jadard->panel, dev, &jadard_funcs,
+ 		       DRM_MODE_CONNECTOR_DSI);
+ 
+@@ -660,6 +1532,22 @@ static const struct of_device_id jadard_of_match[] = {
+ 		.compatible = "radxa,display-8hd-ad002",
+ 		.data = &radxa_display_8hd_ad002_desc
+ 	},
++	{
++		.compatible = "urt,umo-9399md-1t",
++		.data = &u9399md1t_desc
++	},
++	{
++		.compatible = "urt,umo-9399md-4t",
++		.data = &u9399md4t_desc
++	},
++	{
++		.compatible = "urt,umoh-9344md-t",
++		.data = &umoh9344md_desc
++	},
++	{
++		.compatible = "urt,umoh-9522md-1t",
++		.data = &umoh9522md1t_desc
++	},
+ 	{ /* sentinel */ }
+ };
+ MODULE_DEVICE_TABLE(of, jadard_of_match);
+-- 
+2.43.0
+

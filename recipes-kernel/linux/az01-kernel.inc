@@ -70,10 +70,11 @@ SRC_URI:append:az01 = " file://0001-ARM-dts-rockchip-add-inMusic-AZ01-AZ05-devic
 # defers forever until that supply registers.
 SRC_URI:append:az01 = " file://0002-power-supply-add-inMusic-AZ01-DC-jack-driver.patch"
 
-# The DSI panel. Nothing in-tree drives it, and without a drm_panel the whole
-# display pipeline stays down: rockchip-drm is component-based and will not
-# finish binding until the panel registers, so there is no card0 at all.
-SRC_URI:append:az01 = " file://0003-drm-panel-add-URT-UMOH-9522MD-T.patch"
+# The SC6000's DSI panel, a Himax HX8260. Nothing in-tree drives it, and
+# without a drm_panel the whole display pipeline stays down: rockchip-drm is
+# component-based and will not finish binding until the panel registers, so
+# there is no card0 at all.
+SRC_URI:append:az01 = " file://0003-drm-panel-add-a-Himax-HX8260-panel-driver.patch"
 
 # Audio. Two drivers, because the hardware is split that way: a codec with no
 # control interface (master clock plus enable/mute/reset GPIOs) and a machine
@@ -114,6 +115,10 @@ SRC_URI:append:az01 = " file://0008-of-fdt-honor-reserved-memory-own-cells.patch
 # The ILI9881C-based panels - the Prime GO's among them. They go into the
 # in-tree ILI9881C driver rather than ours: one patch per driver.
 SRC_URI:append:az01 = " file://0009-drm-panel-ilitek-ili9881c-add-inMusic-panels.patch"
+
+# The JD9365-based panels, into the in-tree JD9365 driver - one patch per
+# driver. It also carries the driver fixes they need on this kernel.
+SRC_URI:append:az01 = " file://0010-drm-panel-jadard-jd9365da-h3-add-inMusic-panels.patch"
 
 # The signed-boot machine needs a kernel FIT, not the zImage-in-rootfs shape
 # the other boards use. Gated internally on the az0x-signed override; a no-op
