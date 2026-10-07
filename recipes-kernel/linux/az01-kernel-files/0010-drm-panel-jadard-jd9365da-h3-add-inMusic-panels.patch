@@ -1,4 +1,4 @@
-From 9cad61b1350565bca299b3d59052f6b854c6ea29 Mon Sep 17 00:00:00 2001
+From 97013ecdf96669b818d7ead6573528fc97e2992d Mon Sep 17 00:00:00 2001
 From: Dylan Corrales <deathcamel58@gmail.com>
 Date: Tue, 6 Oct 2026 11:10:49 -0400
 Subject: [PATCH] drm/panel: jadard-jd9365da-h3: Add the inMusic panels
@@ -8,15 +8,25 @@ AZ01 devices: urt,umo-9399md-1t, urt,umo-9399md-4t, urt,umoh-9344md-t
 and urt,umoh-9522md-1t. The init sequences are the ones the vendor's
 bootloader sends, replayed unchanged; the two table-driven ones are
 followed by the page 0 select and tearing-effect enable its driver
-appends. Timings and DSI flags are the vendor's.
+appends. Timings and DSI flags are the vendor's, except that
+9399md-4t runs at 73000 kHz rather than u-boot's 72927, as the vendor
+kernel does. At 72927 a Prime 4+ came up with its color channels
+rotated.
 
-Supporting them needs four driver changes. The first three are
+Supporting them needs five driver changes. The first four are
 equivalent to later upstream commits, which do not apply to this kernel
 as they stand:
 
 - Reset polarity: assert reset with 1 and release it with 0, so prepare
   no longer leaves the panel held in reset, and reset is released before
   power-off (upstream a8972d5a49b4 and 095c8e61f4c7).
+- Send the init sequence, sleep-out and display-on from prepare(),
+  before the DSI host starts the video stream, instead of from enable()
+  (upstream 97d1f449c359 and the change before it), and set
+  prepare_prev_first so that the DSI host is up when prepare() runs
+  (upstream b55a4b5d4769). Sent after video had started, a Prime 4+
+  came up with its picture rolled; without prepare_prev_first, the
+  sequence goes out before the host is up and the panel stays dark.
 - Panel orientation from the "rotation" property (upstream
   e1c550898f75).
 - Per-panel DSI mode flags, as upstream later allowed (eb019688f2a9);
@@ -26,11 +36,11 @@ as they stand:
 
 Upstream-Status: Inappropriate [adapted backports plus vendor board support]
 ---
- .../gpu/drm/panel/panel-jadard-jd9365da-h3.c  | 904 +++++++++++++++++-
- 1 file changed, 896 insertions(+), 8 deletions(-)
+ .../gpu/drm/panel/panel-jadard-jd9365da-h3.c  | 973 +++++++++++++++++-
+ 1 file changed, 931 insertions(+), 42 deletions(-)
 
 diff --git a/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c b/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c
-index 4879835..e9fd0f0 100644
+index 4879835fe101..bf5d6dda598a 100644
 --- a/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c
 +++ b/drivers/gpu/drm/panel/panel-jadard-jd9365da-h3.c
 @@ -31,6 +31,7 @@ struct jadard_panel_desc {
@@ -49,7 +59,56 @@ index 4879835..e9fd0f0 100644
  };
  
  static inline struct jadard *panel_to_jadard(struct drm_panel *panel)
-@@ -110,13 +112,13 @@ static int jadard_prepare(struct drm_panel *panel)
+@@ -48,38 +50,6 @@ static inline struct jadard *panel_to_jadard(struct drm_panel *panel)
+ 	return container_of(panel, struct jadard, panel);
+ }
+ 
+-static int jadard_enable(struct drm_panel *panel)
+-{
+-	struct device *dev = panel->dev;
+-	struct jadard *jadard = panel_to_jadard(panel);
+-	const struct jadard_panel_desc *desc = jadard->desc;
+-	struct mipi_dsi_device *dsi = jadard->dsi;
+-	unsigned int i;
+-	int err;
+-
+-	msleep(10);
+-
+-	for (i = 0; i < desc->num_init_cmds; i++) {
+-		const struct jadard_init_cmd *cmd = &desc->init_cmds[i];
+-
+-		err = mipi_dsi_dcs_write_buffer(dsi, cmd->data, JD9365DA_INIT_CMD_LEN);
+-		if (err < 0)
+-			return err;
+-	}
+-
+-	msleep(120);
+-
+-	err = mipi_dsi_dcs_exit_sleep_mode(dsi);
+-	if (err < 0)
+-		DRM_DEV_ERROR(dev, "failed to exit sleep mode ret = %d\n", err);
+-
+-	err =  mipi_dsi_dcs_set_display_on(dsi);
+-	if (err < 0)
+-		DRM_DEV_ERROR(dev, "failed to set display on ret = %d\n", err);
+-
+-	return 0;
+-}
+-
+ static int jadard_disable(struct drm_panel *panel)
+ {
+ 	struct device *dev = panel->dev;
+@@ -100,6 +70,9 @@ static int jadard_disable(struct drm_panel *panel)
+ static int jadard_prepare(struct drm_panel *panel)
+ {
+ 	struct jadard *jadard = panel_to_jadard(panel);
++	const struct jadard_panel_desc *desc = jadard->desc;
++	struct mipi_dsi_device *dsi = jadard->dsi;
++	unsigned int i;
+ 	int ret;
+ 
+ 	ret = regulator_enable(jadard->vccio);
+@@ -110,23 +83,45 @@ static int jadard_prepare(struct drm_panel *panel)
  	if (ret)
  		return ret;
  
@@ -65,8 +124,33 @@ index 4879835..e9fd0f0 100644
 +	gpiod_set_value(jadard->reset, 0);
  	msleep(120);
  
- 	return 0;
-@@ -126,7 +128,7 @@ static int jadard_unprepare(struct drm_panel *panel)
+-	return 0;
++	/*
++	 * The whole sequence goes out here, before the DSI host starts the
++	 * video stream, as it does in mainline since commit 97d1f449c359
++	 * ("drm/panel: jd9365da: Move "exit sleep mode" and "set display on"
++	 * cmds"). Sent from enable() instead, it reaches a panel that is already
++	 * receiving video, and an inMusic Prime 4+ came up with its picture
++	 * rolled.
++	 */
++	for (i = 0; i < desc->num_init_cmds; i++) {
++		const struct jadard_init_cmd *cmd = &desc->init_cmds[i];
++
++		ret = mipi_dsi_dcs_write_buffer(dsi, cmd->data, JD9365DA_INIT_CMD_LEN);
++		if (ret < 0)
++			return ret;
++	}
++
++	msleep(120);
++
++	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
++	if (ret < 0)
++		return ret;
++
++	return mipi_dsi_dcs_set_display_on(dsi);
+ }
+ 
+ static int jadard_unprepare(struct drm_panel *panel)
  {
  	struct jadard *jadard = panel_to_jadard(panel);
  
@@ -75,7 +159,7 @@ index 4879835..e9fd0f0 100644
  	msleep(120);
  
  	regulator_disable(jadard->vdd);
-@@ -159,12 +161,20 @@ static int jadard_get_modes(struct drm_panel *panel,
+@@ -159,12 +154,19 @@ static int jadard_get_modes(struct drm_panel *panel,
  	return 1;
  }
  
@@ -90,13 +174,13 @@ index 4879835..e9fd0f0 100644
  	.disable = jadard_disable,
  	.unprepare = jadard_unprepare,
  	.prepare = jadard_prepare,
- 	.enable = jadard_enable,
+-	.enable = jadard_enable,
  	.get_modes = jadard_get_modes,
 +	.get_orientation = jadard_panel_get_orientation,
  };
  
  static const struct jadard_init_cmd radxa_display_8hd_ad002_init_cmds[] = {
-@@ -584,6 +594,855 @@ static const struct jadard_panel_desc cz101b4001_desc = {
+@@ -584,6 +586,862 @@ static const struct jadard_panel_desc cz101b4001_desc = {
  	.num_init_cmds = ARRAY_SIZE(cz101b4001_init_cmds),
  };
  
@@ -503,7 +587,14 @@ index 4879835..e9fd0f0 100644
 +
 +static const struct jadard_panel_desc u9399md4t_desc = {
 +	.mode = {
-+		.clock		= 72927,
++		/*
++		 * 73000, not u-boot's 72927: what the vendor kernel runs, and
++		 * what this panel ran correctly at when Linux inherited
++		 * u-boot's setup. dw-mipi-dsi derives its PHY PLL settings from
++		 * this clock; at 72927 a Prime 4+ came up with its color
++		 * channels rotated.
++		 */
++		.clock		= 73000,
 +
 +		.hdisplay	= 800,
 +		.hsync_start	= 800 + 77,
@@ -952,7 +1043,7 @@ index 4879835..e9fd0f0 100644
  static int jadard_dsi_probe(struct mipi_dsi_device *dsi)
  {
  	struct device *dev = &dsi->dev;
-@@ -596,18 +1455,27 @@ static int jadard_dsi_probe(struct mipi_dsi_device *dsi)
+@@ -596,18 +1454,27 @@ static int jadard_dsi_probe(struct mipi_dsi_device *dsi)
  		return -ENOMEM;
  
  	desc = of_device_get_match_data(dev);
@@ -984,7 +1075,7 @@ index 4879835..e9fd0f0 100644
  	if (IS_ERR(jadard->vdd)) {
  		DRM_DEV_ERROR(&dsi->dev, "failed to get vdd regulator\n");
  		return PTR_ERR(jadard->vdd);
-@@ -619,6 +1487,10 @@ static int jadard_dsi_probe(struct mipi_dsi_device *dsi)
+@@ -619,6 +1486,10 @@ static int jadard_dsi_probe(struct mipi_dsi_device *dsi)
  		return PTR_ERR(jadard->vccio);
  	}
  
@@ -995,7 +1086,16 @@ index 4879835..e9fd0f0 100644
  	drm_panel_init(&jadard->panel, dev, &jadard_funcs,
  		       DRM_MODE_CONNECTOR_DSI);
  
-@@ -660,6 +1532,22 @@ static const struct of_device_id jadard_of_match[] = {
+@@ -626,6 +1497,8 @@ static int jadard_dsi_probe(struct mipi_dsi_device *dsi)
+ 	if (ret)
+ 		return ret;
+ 
++	jadard->panel.prepare_prev_first = true;
++
+ 	drm_panel_add(&jadard->panel);
+ 
+ 	mipi_dsi_set_drvdata(dsi, jadard);
+@@ -660,6 +1533,22 @@ static const struct of_device_id jadard_of_match[] = {
  		.compatible = "radxa,display-8hd-ad002",
  		.data = &radxa_display_8hd_ad002_desc
  	},
