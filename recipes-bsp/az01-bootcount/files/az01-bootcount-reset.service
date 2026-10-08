@@ -1,0 +1,14 @@
+[Unit]
+Description=Clear the bootloader boot counter after a successful boot
+# The bootloader enters recovery after a few warm reboots unless the OS
+# clears this counter. Clear it once userspace is up.
+After=multi-user.target
+ConditionPathExists=/dev/mem
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/az01-bootcount reset
+
+[Install]
+WantedBy=multi-user.target
