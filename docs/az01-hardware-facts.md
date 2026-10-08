@@ -165,6 +165,28 @@ DT topology, for reference:
     /sound        inmusic,jp11-audio        clksel0-gpios=<&gpio2 3 0> clksel1-gpios=<&gpio2 4 0>
     /sound-codec  inmusic,jp11-audio-codec  enable-gpios=<..1 0> mute-gpios=<..2 0> reset-gpios=<..0 1>
 
+## Boot counter -- warm reboots end in fastboot unless the OS clears it
+
+The vendor u-boot keeps a boot counter in the PMU syscon (`0xff730000`,
+offset `0xa0`) in u-boot's `bootcount_syscon` format: magic `0xb001` in the
+upper 16 bits, the count in the lower 16. It increments the count on every
+boot. A power cycle clears the register; a warm reset does not. After a few
+consecutive warm reboots the bootloader decides boots are failing and enters
+recovery (fastboot, `15e4:d007`) instead of booting the kernel FIT.
+
+Seen on JC11S: right after a cold boot the register reads `b0010001`, and the
+first automatic warm reboot booted normally while a later one stopped in
+fastboot. The reboot-mode register (offset `0x94`) read `5242c300` (normal)
+after recovery, so the boot-mode flag was not the cause. The exact limit has
+not been measured.
+
+The OS has to clear the count after a successful boot. `az01-bootcount`
+(`recipes-bsp/az01-bootcount`) does that from a boot-time unit: it writes
+`0xb0010000` through `/dev/mem`, and only on an `inmusic,az01` +
+`rockchip,rk3288` board whose register already holds the magic. The u-boot
+environment is not where this counter lives, so `fw_setenv bootcount 0` has
+no effect. `az01-bootcount show` prints the current value.
+
 ## Loose end
 
 `brcmfmac43456-sdio.inmusic,jp11.bin` is not found at boot, so Wi-Fi firmware

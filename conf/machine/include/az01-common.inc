@@ -69,6 +69,10 @@ MACHINE_FEATURES = "usbhost usbgadget alsa screen ext2 rtc"
 
 MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "${AZ0X_ESSENTIAL_MODULES}"
 
+# The bootloader counts warm reboots in a PMU register and enters recovery
+# (fastboot) after a few unless the OS clears it; see az01-bootcount.
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "az01-bootcount"
+
 # --- X11 ---------------------------------------------------------------------
 # meta-rockchip's rockchip-defaults.inc lists xserver-xorg-xvfb in XSERVER, but
 # poky's xserver-xorg does not enable the xvfb PACKAGECONFIG by default, so that

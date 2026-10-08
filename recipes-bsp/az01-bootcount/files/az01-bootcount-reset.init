@@ -1,0 +1,27 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          az01-bootcount-reset
+# Required-Start:    $local_fs
+# Required-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Clear the bootloader boot counter after a successful boot
+### END INIT INFO
+#
+# SysV counterpart of az01-bootcount-reset.service.
+
+case "$1" in
+    start)
+        /usr/sbin/az01-bootcount reset
+        ;;
+    stop|restart|force-reload)
+        ;;
+    status)
+        /usr/sbin/az01-bootcount show
+        ;;
+    *)
+        echo "usage: $0 {start|status}" >&2
+        exit 2
+        ;;
+esac
+exit 0
