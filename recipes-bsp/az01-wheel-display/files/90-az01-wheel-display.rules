@@ -1,0 +1,2 @@
+# SC6000 jog-wheel display: stop its idle reset loop as soon as it appears.
+ACTION=="add", SUBSYSTEM=="sound", KERNEL=="midiC*D0", ATTRS{idVendor}=="15e4", ATTRS{idProduct}=="900d", RUN+="/usr/libexec/az01-wheel-display-release $devnode"

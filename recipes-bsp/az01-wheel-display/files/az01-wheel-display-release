@@ -1,0 +1,12 @@
+#!/bin/sh
+# Release the SC6000 jog-wheel display (USB-MIDI 15e4:900d) from its idle
+# watchdog. Until a host talks to it, the display resets itself about every
+# 10 s, re-enumerating as a new USB device each time. An application that
+# opened the old instance is then left with a dead MIDI port, and its first
+# messages can never arrive. A MIDI device inquiry (F0 7E 7F 06 01 F7) makes
+# the display stop expecting keepalives, so it stays put until an
+# application starts driving it.
+#
+# usage: az01-wheel-display-release /dev/snd/midiCxDy
+[ -c "$1" ] || exit 0
+printf '\360\176\177\006\001\367' > "$1"
