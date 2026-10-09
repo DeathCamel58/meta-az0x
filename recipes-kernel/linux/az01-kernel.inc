@@ -124,6 +124,14 @@ SRC_URI:append:az01 = " file://0010-drm-panel-jadard-jd9365da-h3-add-inMusic-pan
 # so a panel initialised from prepare() sees the clock lane enter HS.
 SRC_URI:append:az01 = " file://0011-drm-bridge-dw-mipi-dsi-request-the-HS-clock-only-in-video-mode.patch"
 
+# The boards' gpio-restart line holds the power supply on through the CRU
+# reset rather than resetting the board, so the driver warned on every
+# reboot. The driver patch adds a "power-hold" property for such lines; the
+# device tree patch sets it on the AZ01 node. Do not drop that node: without
+# it "reboot loader" powers the board off.
+SRC_URI:append:az01 = " file://0012-power-reset-gpio-restart-support-lines-that-hold-power-through-a-restart.patch"
+SRC_URI:append:az01 = " file://0013-ARM-dts-rockchip-az01-mark-the-gpio-restart-line-as-a-power-hold.patch"
+
 # The signed-boot machine needs a kernel FIT, not the zImage-in-rootfs shape
 # the other boards use. Gated internally on the az0x-signed override; a no-op
 # everywhere else. See the include for the FIT shape it emits.

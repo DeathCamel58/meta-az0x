@@ -1,0 +1,265 @@
+From 358e320a890197e9d58ad05c657d4a031ab67ec7 Mon Sep 17 00:00:00 2001
+From: Dylan Corrales <deathcamel58@gmail.com>
+Date: Fri, 9 Oct 2026 12:53:07 -0400
+Subject: [PATCH 13/13] ARM: dts: rockchip: az01: mark the gpio-restart line as
+ a power hold
+
+The AZ01 boards' gpio-restart drives PWR_OFF_DELAY (GPIO0_B1), which does
+not reset the board: it holds the power supply on through the CRU reset
+that follows, which would otherwise drop PWR_HOLD and power the board
+off. Removing the node makes "reboot loader" power the board off.
+
+Mark it "power-hold", so the restart handler stops warning on every
+reboot about a reset it is not meant to perform.
+
+Upstream-Status: Inappropriate [vendor board support]
+---
+ arch/arm/boot/dts/rockchip/rk3288-az01-acv5s-base.dtsi     | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-acvb-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-acvm-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-hg02-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-hg02-revf-base.dtsi | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-hg03-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-jc11-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-jc11s-base.dtsi     | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-jp07-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-jp08-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf-base.dtsi | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-jp11-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-jp13-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-jp14-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-mg01-base.dtsi      | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-base.dtsi  | 1 +
+ arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-base.dtsi  | 1 +
+ 19 files changed, 19 insertions(+)
+
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acv5s-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-acv5s-base.dtsi
+index e55a9508d896..25bec0ce2174 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-acv5s-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acv5s-base.dtsi
+@@ -257,6 +257,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi
+index 7dd4f6f5b958..4e4f449dc2a0 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi
+@@ -255,6 +255,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acvb-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-acvb-base.dtsi
+index 21a52c1db2d5..94812fd60bf0 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-acvb-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvb-base.dtsi
+@@ -256,6 +256,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-base.dtsi
+index 774455eacb41..d3b46ab752df 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-base.dtsi
+@@ -261,6 +261,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-base.dtsi
+index 9830071ddf83..4dfe324b37ba 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-base.dtsi
+@@ -247,6 +247,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio0@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-revf-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-revf-base.dtsi
+index 500aa9e0ebcf..028a5d0c40c9 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-revf-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-revf-base.dtsi
+@@ -247,6 +247,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio0@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg03-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-hg03-base.dtsi
+index b7c8318be3b9..1d61bad20888 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-hg03-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg03-base.dtsi
+@@ -246,6 +246,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio0@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc11-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11-base.dtsi
+index 5d72b8dae9d0..6b5d1d802cc9 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-jc11-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11-base.dtsi
+@@ -248,6 +248,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s-base.dtsi
+index 7ad2d06b2df3..4e7ee88ce4af 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s-base.dtsi
+@@ -248,6 +248,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi
+index 84f618c30193..9a67d83fb619 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi
+@@ -249,6 +249,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-base.dtsi
+index 1254db20cedb..736994ee4344 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-base.dtsi
+@@ -249,6 +249,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-base.dtsi
+index 3ebc764e626d..4b45345ebe24 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-base.dtsi
+@@ -249,6 +249,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf-base.dtsi
+index 0b25ecd7b117..b0d67047b703 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf-base.dtsi
+@@ -249,6 +249,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-base.dtsi
+index 571ed039acac..7ab93ae3d62a 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-base.dtsi
+@@ -248,6 +248,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-base.dtsi
+index ee0cfa6671c8..58d72a4e5b32 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-base.dtsi
+@@ -250,6 +250,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-base.dtsi
+index e15307f99a48..be4e3f2f772d 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-base.dtsi
+@@ -250,6 +250,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mg01-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-mg01-base.dtsi
+index 98435e0f3066..bf2d7fb1511e 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-mg01-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mg01-base.dtsi
+@@ -247,6 +247,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio0@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-base.dtsi
+index 0b8fd7866c79..0d3510168475 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-base.dtsi
+@@ -256,6 +256,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
+diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-base.dtsi
+index 611fb05b5514..4eef9cb2e28f 100644
+--- a/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-base.dtsi
++++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-base.dtsi
+@@ -256,6 +256,7 @@ power {
+ 	};
+ 	gpio-restart {
+ 		compatible = "gpio-restart";
++		power-hold;
+ 		gpios = <&{/pinctrl/gpio@ff750000} 0x09 0x00>;
+ 		pinctrl-names = "default";
+ 		pinctrl-0 = <&{/pinctrl/reboot/pwr-off-delay}>;
