@@ -1,0 +1,95 @@
+From 6d67ed245dd87f14b4fb44122540006454998908 Mon Sep 17 00:00:00 2001
+From: Dylan Corrales <deathcamel58@gmail.com>
+Date: Fri, 9 Oct 2026 12:53:07 -0400
+Subject: [PATCH 12/13] power: reset: gpio-restart: support lines that hold
+ power through a restart
+
+Some boards drive a GPIO before restarting not to reset the system but
+to keep its power supply on through the reset. On the inMusic AZ01
+boards (RK3288), the bootloader latches the supply on with one GPIO, and
+the CRU global reset that restarts the SoC clears it. A second line,
+PWR_OFF_DELAY, has to be driven high before that reset to hold the
+supply up until the bootloader latches it again. Without it the board
+powers off instead of restarting.
+
+gpio-restart already drives such a line the right way, at a higher
+priority than the CRU restart handler, but it assumes the GPIO itself
+resets the system and ends with WARN_ON(1). On these boards that
+warning fires on every reboot, although the restart is working as
+intended: the next handler performs the reset.
+
+Add a "power-hold" property for such lines. The sequence is unchanged;
+the handler just does not warn when the system is still running after
+it. Boards without the property keep the warning.
+
+Upstream-Status: Pending
+---
+ .../bindings/power/reset/gpio-restart.yaml           | 12 ++++++++++++
+ drivers/power/reset/gpio-restart.c                   | 10 +++++++++-
+ 2 files changed, 21 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/devicetree/bindings/power/reset/gpio-restart.yaml b/Documentation/devicetree/bindings/power/reset/gpio-restart.yaml
+index 53535de0d41c..a16a90f9fa88 100644
+--- a/Documentation/devicetree/bindings/power/reset/gpio-restart.yaml
++++ b/Documentation/devicetree/bindings/power/reset/gpio-restart.yaml
+@@ -25,6 +25,12 @@ description: >
+   inactive-delay, the GPIO is driven active again.  After a delay specified by wait-delay, the
+   restart handler completes allowing other restart handlers to be attempted.
+ 
++  Some boards use such a line not to reset the system but to keep its power supply on through
++  a reset performed by another restart handler, for example when the reset also clears the line
++  that normally latches the supply on. The 'power-hold' property describes that case: the
++  sequence is the same, and the handler is expected to complete without the system having
++  restarted.
++
+ allOf:
+   - $ref: restart-handler.yaml#
+ 
+@@ -43,6 +49,12 @@ properties:
+       initiated.  If this optional property is not specified, the GPIO is initialized as an output
+       in its inactive state.
+ 
++  power-hold:
++    $ref: /schemas/types.yaml#/definitions/flag
++    description: The GPIO does not restart the system. It holds the power supply on through a
++      restart performed by a lower priority restart handler, so the restart handler completing
++      without a reset is expected rather than an error.
++
+   priority:
+     default: 129
+ 
+diff --git a/drivers/power/reset/gpio-restart.c b/drivers/power/reset/gpio-restart.c
+index 3aa19765772d..698106045eff 100644
+--- a/drivers/power/reset/gpio-restart.c
++++ b/drivers/power/reset/gpio-restart.c
+@@ -21,6 +21,7 @@ struct gpio_restart {
+ 	u32 active_delay_ms;
+ 	u32 inactive_delay_ms;
+ 	u32 wait_delay_ms;
++	bool power_hold;
+ };
+ 
+ static int gpio_restart_notify(struct notifier_block *this,
+@@ -43,7 +44,12 @@ static int gpio_restart_notify(struct notifier_block *this,
+ 	/* give it some time */
+ 	mdelay(gpio_restart->wait_delay_ms);
+ 
+-	WARN_ON(1);
++	/*
++	 * A line that only holds the power on through the restart is
++	 * expected to still be running here: another restart handler
++	 * performs the actual reset.
++	 */
++	WARN_ON(!gpio_restart->power_hold);
+ 
+ 	return NOTIFY_DONE;
+ }
+@@ -92,6 +98,8 @@ static int gpio_restart_probe(struct platform_device *pdev)
+ 			&gpio_restart->inactive_delay_ms);
+ 	of_property_read_u32(pdev->dev.of_node, "wait-delay",
+ 			&gpio_restart->wait_delay_ms);
++	gpio_restart->power_hold = of_property_read_bool(pdev->dev.of_node,
++			"power-hold");
+ 
+ 	platform_set_drvdata(pdev, gpio_restart);
+ 
