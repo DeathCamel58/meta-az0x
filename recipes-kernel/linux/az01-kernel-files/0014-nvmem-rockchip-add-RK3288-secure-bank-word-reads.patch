@@ -1,0 +1,134 @@
+From: meta-az0x contributors
+Subject: [PATCH] nvmem: rockchip: add RK3288 secure-bank word reads
+
+The inMusic AZ01/AZ05 device trees describe the bank at 0xffb10000 as
+rockchip,rk3288-secure-efuse. Mainline does not match it, so consumers have
+no nvmem device for the board metadata in this bank.
+
+This bank addresses and returns 32-bit words. The ordinary RK3288 bank at
+0xffb40000 addresses individual bytes, so adding the compatible to its
+existing read callback would return the wrong data. Follow the bank's
+word-read protocol and slice unaligned byte requests from an aligned
+temporary buffer. Serialize reads per device, bound requests to the
+128-byte bank, keep PGENB asserted throughout, and restore standby before
+disabling the clock. No write callback is provided; econfig.read_only
+remains true.
+
+Allocate nvmem IDs automatically so the ordinary and secure banks can
+register simultaneously without both claiming rockchip-efuse0.
+
+The register sequence is based on the GPL-2.0-only mainline Rockchip
+driver; the secure-bank word addressing was checked against the device's
+stock 6.6.119 driver. The stock driver uses MMIO here, not Rockchip SiP
+calls. No trusted-firmware implementation or proprietary source is added.
+
+Upstream-Status: Pending [inMusic RK3288 compatible; other boards need validation]
+---
+diff --git a/drivers/nvmem/rockchip-efuse.c b/drivers/nvmem/rockchip-efuse.c
+--- a/drivers/nvmem/rockchip-efuse.c
++++ b/drivers/nvmem/rockchip-efuse.c
+@@ -11,6 +11,7 @@
+ #include <linux/device.h>
+ #include <linux/io.h>
+ #include <linux/module.h>
++#include <linux/mutex.h>
+ #include <linux/nvmem-provider.h>
+ #include <linux/slab.h>
+ #include <linux/of.h>
+@@ -50,6 +51,7 @@ struct rockchip_efuse_chip {
+ 	struct device *dev;
+ 	void __iomem *base;
+ 	struct clk *clk;
++	struct mutex lock;
+ };
+ 
+ static int rockchip_rk3288_efuse_read(void *context, unsigned int offset,
+@@ -92,6 +94,61 @@ static int rockchip_rk3288_efuse_read(void *context, unsigned int offset,
+ 	return 0;
+ }
+ 
++/* The secure bank has word addressing and a 32-bit data latch. */
++static int rockchip_rk3288_secure_efuse_read(void *context, unsigned int offset,
++					  void *val, size_t bytes)
++{
++	struct rockchip_efuse_chip *efuse = context;
++	unsigned int first, count, i;
++	__le32 *buf;
++	int ret;
++
++	if (offset > 128 || bytes > 128 - offset)
++		return -EINVAL;
++	if (!bytes)
++		return 0;
++
++	first = offset / sizeof(*buf);
++	count = DIV_ROUND_UP(offset % sizeof(*buf) + bytes, sizeof(*buf));
++	buf = kmalloc_array(count, sizeof(*buf), GFP_KERNEL);
++	if (!buf)
++		return -ENOMEM;
++
++	mutex_lock(&efuse->lock);
++	ret = clk_prepare_enable(efuse->clk);
++	if (ret < 0)
++		goto unlock;
++
++	/* PGENB keeps programming disabled; LOAD selects the read latch. */
++	writel(RK3288_LOAD | RK3288_PGENB, efuse->base + REG_EFUSE_CTRL);
++	udelay(1);
++	for (i = 0; i < count; i++) {
++		writel(readl(efuse->base + REG_EFUSE_CTRL) &
++		       ~(RK3288_A_MASK << RK3288_A_SHIFT),
++		       efuse->base + REG_EFUSE_CTRL);
++		writel(readl(efuse->base + REG_EFUSE_CTRL) |
++		       (((first + i) & RK3288_A_MASK) << RK3288_A_SHIFT),
++		       efuse->base + REG_EFUSE_CTRL);
++		udelay(1);
++		writel(readl(efuse->base + REG_EFUSE_CTRL) | RK3288_STROBE,
++		       efuse->base + REG_EFUSE_CTRL);
++		udelay(1);
++		buf[i] = cpu_to_le32(readl(efuse->base + REG_EFUSE_DOUT));
++		writel(readl(efuse->base + REG_EFUSE_CTRL) & ~RK3288_STROBE,
++		       efuse->base + REG_EFUSE_CTRL);
++		udelay(1);
++	}
++
++	writel(RK3288_PGENB | RK3288_CSB, efuse->base + REG_EFUSE_CTRL);
++	clk_disable_unprepare(efuse->clk);
++	memcpy(val, (u8 *)buf + offset % sizeof(*buf), bytes);
++
++unlock:
++	mutex_unlock(&efuse->lock);
++	kfree(buf);
++	return ret;
++}
++
+ static int rockchip_rk3328_efuse_read(void *context, unsigned int offset,
+ 				      void *val, size_t bytes)
+ {
+@@ -206,6 +263,7 @@ static struct nvmem_config econfig = {
+ static struct nvmem_config econfig = {
+ 	.name = "rockchip-efuse",
++	.id = NVMEM_DEVID_AUTO,
+ 	.add_legacy_fixed_of_cells = true,
+ 	.stride = 1,
+ 	.word_size = 1,
+ 	.read_only = true,
+@@ -233,6 +291,10 @@ static const struct of_device_id rockchip_efuse_match[] = {
+ 		.compatible = "rockchip,rk3288-efuse",
+ 		.data = (void *)&rockchip_rk3288_efuse_read,
+ 	},
++	{
++		.compatible = "rockchip,rk3288-secure-efuse",
++		.data = (void *)&rockchip_rk3288_secure_efuse_read,
++	},
+ 	{
+ 		.compatible = "rockchip,rk3368-efuse",
+ 		.data = (void *)&rockchip_rk3288_efuse_read,
+@@ -276,6 +338,7 @@ static int rockchip_efuse_probe(struct platform_device *pdev)
+ 	if (IS_ERR(efuse->clk))
+ 		return PTR_ERR(efuse->clk);
+ 
++	mutex_init(&efuse->lock);
+ 	efuse->dev = dev;
+ 	if (of_property_read_u32(dev->of_node, "rockchip,efuse-size",
+ 				 &econfig.size))

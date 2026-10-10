@@ -43,6 +43,9 @@ our device tree, our userspace:
 
 `az04` is a scaffold only.
 
+The source kernel also provides GPL read-only RK3288 secure-eFuse support for
+board metadata. See [driver details and verification](docs/rk3288-secure-efuse.md).
+
 ## Booting what you build
 
 Whether a device will start what this layer produces depends on the device, and
