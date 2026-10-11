@@ -5,4 +5,4 @@
 # The file lives under files/az01/ rather than per-board: az01-common.inc adds
 # an "az01" MACHINEOVERRIDE, and FILESOVERRIDES includes MACHINEOVERRIDES, so
 # all four boards pick it up from the one path.
-FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+FILESEXTRAPATHS:prepend:az01 := "${THISDIR}/files:"

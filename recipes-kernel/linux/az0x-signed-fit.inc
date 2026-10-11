@@ -39,7 +39,7 @@
 # See docs/az0x-signed-fit.md for the design note and how to validate a full
 # build.
 
-FILESEXTRAPATHS:prepend := "${THISDIR}/az0x-signed-fit-files:"
+FILESEXTRAPATHS:prepend:az0x-signed := "${THISDIR}/az0x-signed-fit-files:"
 
 # Off unless the build is both az0x-signed and a from-source kernel. The
 # recipes that require this include (linux-yocto, linux-yocto-rt) are only

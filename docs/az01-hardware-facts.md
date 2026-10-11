@@ -187,6 +187,29 @@ The OS has to clear the count after a successful boot. `az01-bootcount`
 environment is not where this counter lives, so `fw_setenv bootcount 0` has
 no effect. `az01-bootcount show` prints the current value.
 
+## Power latch -- why gpio-restart must stay
+
+Measured on an SC6000 (JP13). GPIO0 bank, from the vendor's own
+`gpio-line-names`: pin 9 `PWR_OFF_DELAY`, pin 10 `PWR_HOLD`. U-Boot drives
+`PWR_HOLD` high to latch the power supply on, and nothing in Linux claims it.
+The restart that actually resets the SoC is the Rockchip CRU global soft reset
+(`rockchip_restart_handler`, priority 128), and that reset also drops
+`PWR_HOLD`.
+
+The vendor device trees therefore put a `gpio-restart` (priority 255, 1 ms
+active/inactive, 50 ms wait) on `PWR_OFF_DELAY`. It runs first and leaves the
+line high, which holds the supply up through the CRU reset until the bootloader
+latches `PWR_HOLD` again. It does not reset the board itself:
+
+- with the node removed, `reboot loader` powered the SC6000 off instead of
+  restarting it;
+- driving `PWR_OFF_DELAY` high for 45 s while `PWR_HOLD` is high does nothing.
+
+Mainline gpio-restart warns when its GPIO does not reset the board, so every
+reboot printed a backtrace. The vendor kernel deletes the `WARN_ON(1)` for all
+boards. This layer instead adds a `power-hold` property to the driver (patch
+0012) and sets it on the AZ01 node (patch 0013).
+
 ## Loose end
 
 `brcmfmac43456-sdio.inmusic,jp11.bin` is not found at boot, so Wi-Fi firmware

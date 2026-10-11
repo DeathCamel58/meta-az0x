@@ -1,12 +1,12 @@
 SUMMARY = "Minimal de-branded AZ0x root filesystem"
 DESCRIPTION = "A clean scarthgap userspace for the inMusic AZ0x families with \
 no DJ application stack and no vendor telemetry. Boots to a systemd system on \
-the vendor's own prebuilt kernel. This is the base you graft things onto - \
-see az01-image-engine.bb for the feature-parity flavor. \
+the kernel AZ0X_KERNEL_PROVIDER selects. This is the base you graft things \
+onto - see az01-image-engine.bb for the feature-parity flavor. \
 \
 Builds for whichever MACHINE is selected: az01 (RK3288, armv7hf) or az04 \
-(RK3588, aarch64). Read the az04 status section of the README before \
-assuming an az04 build is flashable."
+(RK3588, aarch64). See the README, Booting what you build, before assuming \
+an az04 or az0x-signed build will start."
 
 LICENSE = "MIT"
 
