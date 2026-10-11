@@ -5,7 +5,7 @@
 # poky recipes SkipRecipe unless PREFERRED_PROVIDER_virtual/kernel names them,
 # so this is inert on the default prebuilt path.
 
-FILESEXTRAPATHS:prepend := "${THISDIR}/az01-kernel-files:"
+FILESEXTRAPATHS:prepend:az01 := "${THISDIR}/az01-kernel-files:"
 
 # poky's COMPATIBLE_MACHINE for these recipes is an anchored regex over qemu*
 # only, so every board has to be added explicitly - the same thing

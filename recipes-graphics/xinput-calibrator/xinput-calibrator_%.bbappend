@@ -27,7 +27,15 @@
 # The package itself stays - it is a hard RDEPENDS of
 # packagegroup-core-x11-utils, and the binary is still useful by hand. Only the
 # two autostart hooks go.
-do_install:append() {
+# Only on this layer's machines: a BSP layer must not change other machines'
+# builds just by being added.
+az0x_drop_calibrator_autostart() {
     rm -f ${D}${sysconfdir}/X11/Xsession.d/30xinput_calibrate.sh
     rm -f ${D}${sysconfdir}/xdg/autostart/xinput_calibrator.desktop
+}
+do_install:append:az01() {
+    az0x_drop_calibrator_autostart
+}
+do_install:append:az04() {
+    az0x_drop_calibrator_autostart
 }

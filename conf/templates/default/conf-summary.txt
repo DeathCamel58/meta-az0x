@@ -1,0 +1,1 @@
+Build configuration for inMusic AZ0x devices (meta-az0x), on the Poky reference distribution.

@@ -18,6 +18,19 @@ inherit deploy
 FILESPATH = "${AZ0X_VENDOR_DIR}/${AZ0X_MACHINE_DIR}"
 SRC_URI = "file://boot/ file://lib/"
 
+# Vendor files are staged by hand (see README, "Vendor files"). Without them
+# the file:// SRC_URI fails checksumming at parse time, which would stop the
+# parse for every machine. Skip the recipe with a pointer instead.
+python () {
+    import os
+    path = os.path.join(d.getVar('AZ0X_VENDOR_DIR') or '',
+                        d.getVar('AZ0X_MACHINE_DIR') or '', 'boot')
+    if not (d.getVar('AZ0X_MACHINE_DIR') or '') or not os.path.exists(path):
+        raise bb.parse.SkipRecipe(
+            "vendor files not staged: %s is missing (see the meta-az0x README, "
+            "\"Vendor files\")" % path)
+}
+
 S = "${WORKDIR}"
 
 KERNEL_VERSION = "${AZ0X_KVER}"

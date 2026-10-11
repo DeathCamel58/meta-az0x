@@ -2,12 +2,16 @@
 #
 # The device can run either the vendor's compiled kernel staged as an opaque
 # prebuilt, or a kernel we build from source. This is a switch rather than a
-# replacement: the prebuilt path is the one proven to boot a Prime Go, so it
-# stays the default and stays bisectable against anything new.
+# replacement, so either can be bisected against the other.
 #
-#   AZ0X_KERNEL_PROVIDER = "prebuilt"   vendor binaries (default, proven)
-#                        = "yocto"      linux-yocto 6.6, LINUX_KERNEL_TYPE=standard
+#   AZ0X_KERNEL_PROVIDER = "yocto"      linux-yocto 6.6, LINUX_KERNEL_TYPE=standard
+#                                       (default: verified on a Prime Go and an SC6000)
 #                        = "yocto-rt"   linux-yocto-rt 6.6, preempt-rt
+#                        = "prebuilt"   the vendor's compiled kernel, dtbs and modules
+#
+# Machines whose own kernel cannot be replaced by the default set
+# AZ0X_KERNEL_PROVIDER ?= "prebuilt" before requiring this file: az01-mpc (its
+# vendor kernel is 6.18, newer than ours) and az0x-signed (signed FIT).
 #
 # Building our own kernel is possible on the az01 boards because u-boot loads
 # zImage and the dtb FROM THE ROOTFS and calls bootz on a raw image - no FIT,
@@ -17,12 +21,12 @@
 # and install, and still needs AZ0X_KERNEL_ALLOW_UNSIGNED="1". (az04 cannot:
 # the same signed-FIT enforcement, and this layer emits no FIT for it.)
 
-AZ0X_KERNEL_PROVIDER ?= "prebuilt"
+AZ0X_KERNEL_PROVIDER ?= "yocto"
 
 AZ0X_KERNEL_PN = "${@ {'prebuilt': 'linux-az01-prebuilt', \
                        'yocto':    'linux-yocto', \
                        'yocto-rt': 'linux-yocto-rt'}.get( \
-                       d.getVar('AZ0X_KERNEL_PROVIDER') or 'prebuilt', '') }"
+                       d.getVar('AZ0X_KERNEL_PROVIDER') or 'yocto', '') }"
 
 PREFERRED_PROVIDER_virtual/kernel = "${AZ0X_KERNEL_PN}"
 KERNEL_IMAGETYPE = "zImage"
@@ -36,7 +40,7 @@ KERNEL_IMAGETYPE = "zImage"
 # Prepending here would put az01-ksrc *before* az01 and so make it lose, which
 # is exactly what happened first time round: AZ0X_KERNEL_INSTALL:az01 kept
 # beating :az01-ksrc and the image still asked for kernel-devicetree.
-MACHINEOVERRIDES .= "${@':az01-kprebuilt' if (d.getVar('AZ0X_KERNEL_PROVIDER') or 'prebuilt') == 'prebuilt' else ':az01-ksrc'}"
+MACHINEOVERRIDES .= "${@':az01-kprebuilt' if (d.getVar('AZ0X_KERNEL_PROVIDER') or 'yocto') == 'prebuilt' else ':az01-ksrc'}"
 
 # Device trees come prebuilt on the default path; the source path overrides this.
 KERNEL_DEVICETREE = ""
