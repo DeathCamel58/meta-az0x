@@ -34,8 +34,12 @@ port introduces no SiP calls or trusted-firmware dependency.
 
 - The existing nvmem configuration remains `read_only = true`, with no write
   callback.
-- Requests are bounded to the 128-byte bank and read through an aligned
-  temporary word buffer, including arbitrary unaligned byte ranges.
+- Requests are bounded to the bank size the probe records from
+  `rockchip,efuse-size` (128 bytes on AZ01), not to a fixed constant, and
+  read through an aligned temporary word buffer, including arbitrary
+  unaligned byte ranges. The nvmem sysfs path already clamps to that size;
+  the callback keeps its own check because `nvmem_device_read()` passes
+  in-kernel requests through unchecked in this kernel.
 - A per-device mutex serialises secure-bank reads and clock operations.
 - Every read-control register write retains `PGENB` (programming disabled).
   These register writes select addresses and strobe the read latch; they do
@@ -57,8 +61,11 @@ bitbake package-index
 
 The test extracts the actual added callback from the patch, compiles it against
 a simulated register bank with AddressSanitizer/UndefinedBehaviorSanitizer,
-and checks all **8,385 valid byte ranges**, invalid/overflow bounds, allocation
-and clock failures, programming-disable control bits, standby and cleanup.
+and checks every valid byte range for 128-, 64- and 30-byte banks (**11,026
+ranges**), invalid/overflow bounds relative to each bank size, allocation and
+clock failures, programming-disable control bits, standby and cleanup. It also
+checks that the probe records the size per device and that the callback has
+no hard-coded bank size.
 
 For the tested module-enabled RT configuration, install the matching module
 package on the USB root disk:

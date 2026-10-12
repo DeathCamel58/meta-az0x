@@ -9,10 +9,14 @@ This bank addresses and returns 32-bit words. The ordinary RK3288 bank at
 0xffb40000 addresses individual bytes, so adding the compatible to its
 existing read callback would return the wrong data. Follow the bank's
 word-read protocol and slice unaligned byte requests from an aligned
-temporary buffer. Serialize reads per device, bound requests to the
-128-byte bank, keep PGENB asserted throughout, and restore standby before
-disabling the clock. No write callback is provided; econfig.read_only
-remains true.
+temporary buffer. Serialize reads per device, keep PGENB asserted
+throughout, and restore standby before disabling the clock. No write
+callback is provided; econfig.read_only remains true.
+
+Record the bank size from rockchip,efuse-size in the per-device state and
+bound requests to it. The nvmem sysfs path already clamps to that size,
+but nvmem_device_read() hands in-kernel requests to reg_read unchecked, so
+the callback keeps its own check without assuming a particular bank size.
 
 Allocate nvmem IDs automatically so the ordinary and secure banks can
 register simultaneously without both claiming rockchip-efuse0.
@@ -35,15 +39,16 @@ diff --git a/drivers/nvmem/rockchip-efuse.c b/drivers/nvmem/rockchip-efuse.c
  #include <linux/nvmem-provider.h>
  #include <linux/slab.h>
  #include <linux/of.h>
-@@ -50,6 +51,7 @@ struct rockchip_efuse_chip {
+@@ -50,6 +51,8 @@
  	struct device *dev;
  	void __iomem *base;
  	struct clk *clk;
 +	struct mutex lock;
++	u32 size;
  };
  
  static int rockchip_rk3288_efuse_read(void *context, unsigned int offset,
-@@ -92,6 +94,61 @@ static int rockchip_rk3288_efuse_read(void *context, unsigned int offset,
+@@ -92,6 +95,65 @@
  	return 0;
  }
  
@@ -56,7 +61,11 @@ diff --git a/drivers/nvmem/rockchip-efuse.c b/drivers/nvmem/rockchip-efuse.c
 +	__le32 *buf;
 +	int ret;
 +
-+	if (offset > 128 || bytes > 128 - offset)
++	/*
++	 * The nvmem sysfs path already clamps to the registered size, but
++	 * nvmem_device_read() passes in-kernel requests through unchecked.
++	 */
++	if (offset > efuse->size || bytes > efuse->size - offset)
 +		return -EINVAL;
 +	if (!bytes)
 +		return 0;
@@ -105,26 +114,26 @@ diff --git a/drivers/nvmem/rockchip-efuse.c b/drivers/nvmem/rockchip-efuse.c
  static int rockchip_rk3328_efuse_read(void *context, unsigned int offset,
  				      void *val, size_t bytes)
  {
-@@ -206,6 +263,7 @@ static struct nvmem_config econfig = {
+@@ -205,6 +267,7 @@
+ 
  static struct nvmem_config econfig = {
  	.name = "rockchip-efuse",
 +	.id = NVMEM_DEVID_AUTO,
  	.add_legacy_fixed_of_cells = true,
  	.stride = 1,
  	.word_size = 1,
- 	.read_only = true,
-@@ -233,6 +291,10 @@ static const struct of_device_id rockchip_efuse_match[] = {
- 		.compatible = "rockchip,rk3288-efuse",
+@@ -234,6 +297,10 @@
  		.data = (void *)&rockchip_rk3288_efuse_read,
  	},
-+	{
+ 	{
 +		.compatible = "rockchip,rk3288-secure-efuse",
 +		.data = (void *)&rockchip_rk3288_secure_efuse_read,
 +	},
- 	{
++	{
  		.compatible = "rockchip,rk3368-efuse",
  		.data = (void *)&rockchip_rk3288_efuse_read,
-@@ -276,6 +338,7 @@ static int rockchip_efuse_probe(struct platform_device *pdev)
+ 	},
+@@ -276,10 +343,12 @@
  	if (IS_ERR(efuse->clk))
  		return PTR_ERR(efuse->clk);
  
@@ -132,3 +141,8 @@ diff --git a/drivers/nvmem/rockchip-efuse.c b/drivers/nvmem/rockchip-efuse.c
  	efuse->dev = dev;
  	if (of_property_read_u32(dev->of_node, "rockchip,efuse-size",
  				 &econfig.size))
+ 		econfig.size = resource_size(res);
++	efuse->size = econfig.size;
+ 	econfig.reg_read = data;
+ 	econfig.priv = efuse;
+ 	econfig.dev = efuse->dev;
