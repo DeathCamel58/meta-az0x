@@ -1,0 +1,33 @@
+#!/bin/sh
+# Link this board's ALSA definitions into /var/lib/alsa/conf.d.
+#
+# One image serves several boards (az01-premium is both the SC6000 and the
+# SC6000M), so the choice is made at boot. The key is the device tree's
+# product code, which is also the name the machine driver gives the sound
+# card, so each board file can address its card as hw:CARD=<code>. A board
+# with no file gets no link, and ALSA then loads nothing extra.
+#
+# Why /var/lib/alsa/conf.d and not /etc/alsa/conf.d: alsa-lib loads it at the
+# top level, so the devices show up in name hints (aplay -L, application
+# device lists), and a missing directory is harmless. A link in
+# /etc/alsa/conf.d would dangle until this ran, and alsa-lib treats a conf.d
+# entry it cannot open as fatal, dropping every PCM, hw: included. A load
+# hook avoids that, but its devices are then missing from name hints.
+#
+# The link points into the read-only rootfs, so it cannot dangle. It is
+# removed and remade on every boot in case /var/lib ever persists.
+
+dir=/var/lib/alsa/conf.d
+link=$dir/60-az01-board.conf
+boards=/usr/share/az01-alsa/boards
+
+code=$(tr -d '\000' < /proc/device-tree/inmusic,product-code 2>/dev/null)
+case "$code" in
+''|*[!A-Za-z0-9]*) code= ;;
+esac
+
+rm -f "$link"
+if [ -n "$code" ] && [ -f "$boards/$code.conf" ]; then
+	mkdir -p "$dir"
+	ln -s "$boards/$code.conf" "$link"
+fi

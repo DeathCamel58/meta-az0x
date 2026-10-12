@@ -73,6 +73,10 @@ MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "${AZ0X_ESSENTIAL_MODULES}"
 # (fastboot) after a few unless the OS clears it; see az01-bootcount.
 MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "az01-bootcount"
 
+# Named ALSA devices for boards whose channel map is known, picked at boot by
+# product code; see az01-alsa-config.
+MACHINE_ESSENTIAL_EXTRA_RRECOMMENDS += "az01-alsa-config"
+
 # --- X11 ---------------------------------------------------------------------
 # meta-rockchip's rockchip-defaults.inc lists xserver-xorg-xvfb in XSERVER, but
 # poky's xserver-xorg does not enable the xvfb PACKAGECONFIG by default, so that
