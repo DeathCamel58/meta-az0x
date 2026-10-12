@@ -146,6 +146,9 @@ Choosing the source kernel on `az01-mpc` (a downgrade from 6.18) or on
 `AZ0X_KERNEL_ALLOW_DOWNGRADE = "1"` or `AZ0X_KERNEL_ALLOW_UNSIGNED = "1"`,
 so neither happens by accident.
 
+The source kernel also provides GPL read-only RK3288 secure-eFuse support for
+board metadata. See [driver details and verification](docs/rk3288-secure-efuse.md).
+
 ## Booting what you build
 
 Whether a device starts what this layer produces depends on the device, and

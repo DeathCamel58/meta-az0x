@@ -132,6 +132,11 @@ SRC_URI:append:az01 = " file://0011-drm-bridge-dw-mipi-dsi-request-the-HS-clock-
 SRC_URI:append:az01 = " file://0012-power-reset-gpio-restart-support-lines-that-hold-power-through-a-restart.patch"
 SRC_URI:append:az01 = " file://0013-ARM-dts-rockchip-az01-mark-the-gpio-restart-line-as-a-power-hold.patch"
 
+# The RK3288 secure eFuse bank contains board metadata and returns 32-bit
+# words, unlike the ordinary byte-addressed bank. Keep the GPL read-only
+# driver in the shared board layer; no Engine application code is involved.
+SRC_URI:append:az01 = " file://0014-nvmem-rockchip-add-RK3288-secure-bank-word-reads.patch"
+
 # The signed-boot machine needs a kernel FIT, not the zImage-in-rootfs shape
 # the other boards use. Gated internally on the az0x-signed override; a no-op
 # everywhere else. See the include for the FIT shape it emits.
