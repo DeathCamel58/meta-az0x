@@ -1,4 +1,6 @@
-From: meta-az0x contributors
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Ryan Grenz <info@ryangrenz.com>
+Date: Sat, 10 Oct 2026 18:26:32 +0100
 Subject: [PATCH] nvmem: rockchip: add RK3288 secure-bank word reads
 
 The inMusic AZ01/AZ05 device trees describe the bank at 0xffb10000 as
