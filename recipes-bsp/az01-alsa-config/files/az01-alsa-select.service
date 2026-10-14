@@ -1,0 +1,17 @@
+[Unit]
+Description=Select the ALSA definitions for this board
+# Links them into /var/lib/alsa/conf.d, which alsa-lib reads. /var/lib is a
+# volatile bind mount, so this waits for it, and runs before anything can
+# open a sound device.
+DefaultDependencies=no
+After=local-fs.target var-volatile-lib.service
+Before=sysinit.target alsa-restore.service alsa-state.service sound.target
+ConditionPathExists=/proc/device-tree
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/az01-alsa-select
+
+[Install]
+WantedBy=sysinit.target

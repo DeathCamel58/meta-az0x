@@ -17,15 +17,23 @@ vendor kernel, aplay --dump-hw-params reports RATE as the single value 44100
 and 48000/88200/96000 are rejected outright; formats are S16/S24/S32_LE and
 channels [2 4], the four being a master output plus a headphone output.
 
-MCLK is enabled before reset is released, because the part latches its mode
-from the clock on that edge.
+Power-on follows the vendor's two paths. On boards whose table entry asks
+for it at probe (JP11, JC16) reset is released before the analogue supply is
+switched on. Every other board powers on at the first BIAS_STANDBY
+transition with the supply on first and reset released second. MCLK starts
+last on both paths. Brought up in the probe-time order, an SC6000 (JP13)
+drains the I2S FIFO normally but is silent on all four line outputs.
+
+JP13 and JP14 have no entry of their own in the vendor table and fall back to
+inmusic,jp07-audio-codec: 44.1-96 kHz, four channels, no capture. Measured on
+an SC6000 running the vendor kernel.
 
 Upstream-Status: Inappropriate [vendor board support]
 ---
  sound/soc/codecs/Kconfig            |   8 +
  sound/soc/codecs/Makefile           |   2 +
- sound/soc/codecs/az0x-audio-codec.c | 259 ++++++++++++++++++++++++++++
- 3 files changed, 269 insertions(+)
+ sound/soc/codecs/az0x-audio-codec.c | 301 ++++++++++++++++++++++++++++
+ 3 files changed, 311 insertions(+)
  create mode 100644 sound/soc/codecs/az0x-audio-codec.c
 
 diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
@@ -69,10 +77,10 @@ index a87e56938ce5..b14fa24d1061 100644
  obj-$(CONFIG_SND_SOC_MAX9867)	+= snd-soc-max9867.o
 diff --git a/sound/soc/codecs/az0x-audio-codec.c b/sound/soc/codecs/az0x-audio-codec.c
 new file mode 100644
-index 000000000000..613fe6c88bd5
+index 000000000000..b89807b898ed
 --- /dev/null
 +++ b/sound/soc/codecs/az0x-audio-codec.c
-@@ -0,0 +1,259 @@
+@@ -0,0 +1,301 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * ASoC codec driver for the DAC fitted to inMusic AZ0x boards
@@ -130,6 +138,7 @@ index 000000000000..613fe6c88bd5
 +	bool		has_capture;
 +	unsigned int	enable_delay_ms;	/* after driving enable high */
 +	unsigned int	reset_delay_ms;		/* after releasing reset */
++	bool		power_in_probe;		/* the vendor's "skip" flag */
 +};
 +
 +struct az0x_codec {
@@ -139,6 +148,7 @@ index 000000000000..613fe6c88bd5
 +	struct gpio_desc	*reset;
 +	struct clk		*mclk;
 +	struct snd_soc_dai_driver dai;
++	bool			powered;
 +};
 +
 +static int az0x_codec_mute_stream(struct snd_soc_dai *dai, int mute, int dir)
@@ -186,7 +196,61 @@ index 000000000000..613fe6c88bd5
 +	{ "Capture", NULL, "IN" },
 +};
 +
++/*
++ * Bring-up order and delays are the vendor's, and they are not incidental.
++ * Earlier revisions of this driver used ~1us for both waits, and later ones
++ * used the probe-time order on every board.
++ *
++ * The two paths really do differ in the vendor driver. At probe (JP11, JC16)
++ * it releases reset before switching the analogue supply on. At BIAS_STANDBY
++ * (every other board) it switches the supply on first and releases reset
++ * second. An SC6000 (JP13) brought up in the probe-time order consumes I2S
++ * frames but is silent on every output. MCLK starts last on both paths.
++ */
++static int az0x_codec_power_on(struct az0x_codec *priv)
++{
++	const struct az0x_cfg *cfg = priv->cfg;
++	int ret;
++
++	if (cfg->power_in_probe) {
++		gpiod_set_value_cansleep(priv->reset, 0);
++		msleep(cfg->reset_delay_ms);
++		gpiod_set_value_cansleep(priv->enable, 1);
++		msleep(cfg->enable_delay_ms);
++	} else {
++		gpiod_set_value_cansleep(priv->enable, 1);
++		msleep(cfg->enable_delay_ms);
++		gpiod_set_value_cansleep(priv->reset, 0);
++		msleep(cfg->reset_delay_ms);
++	}
++
++	ret = clk_prepare_enable(priv->mclk);
++	if (ret)
++		return ret;
++
++	priv->powered = true;
++	return 0;
++}
++
++/*
++ * The vendor powers the part on at the first BIAS_STANDBY transition, unless
++ * the board's table entry asks for it at probe; by then the card is up and the
++ * machine driver holds the clksel lines. idle_bias_on keeps the component at
++ * STANDBY or above from then on, so this runs once.
++ */
++static int az0x_codec_set_bias_level(struct snd_soc_component *component,
++				     enum snd_soc_bias_level level)
++{
++	struct az0x_codec *priv = snd_soc_component_get_drvdata(component);
++
++	if (level == SND_SOC_BIAS_STANDBY && !priv->powered)
++		return az0x_codec_power_on(priv);
++
++	return 0;
++}
++
 +static const struct snd_soc_component_driver az0x_codec_component = {
++	.set_bias_level		= az0x_codec_set_bias_level,
 +	.dapm_widgets		= az0x_codec_widgets,
 +	.num_dapm_widgets	= ARRAY_SIZE(az0x_codec_widgets),
 +	.dapm_routes		= az0x_codec_routes,
@@ -198,7 +262,10 @@ index 000000000000..613fe6c88bd5
 +
 +static void az0x_codec_disable_mclk(void *data)
 +{
-+	clk_disable_unprepare(data);
++	struct az0x_codec *priv = data;
++
++	if (priv->powered)
++		clk_disable_unprepare(priv->mclk);
 +}
 +
 +static int az0x_codec_probe(struct platform_device *pdev)
@@ -232,30 +299,15 @@ index 000000000000..613fe6c88bd5
 +	if (IS_ERR(priv->mclk))
 +		return dev_err_probe(dev, PTR_ERR(priv->mclk), "mclk\n");
 +
-+	/*
-+	 * Bring-up order and delays are the vendor's, and they are not
-+	 * incidental: 200ms after releasing reset before the analogue supply is
-+	 * switched on, then 10ms before anything touches the part. Earlier
-+	 * revisions of this driver used ~1us for both.
-+	 *
-+	 * The vendor runs this from probe on boards whose table entry sets its
-+	 * "skip" flag (JP11 and JC16) and from the BIAS_STANDBY transition
-+	 * otherwise. We always run it here: the sequence is identical, only its
-+	 * timing relative to DAPM differs, and no other board has been tested.
-+	 */
-+	gpiod_set_value_cansleep(priv->reset, 0);
-+	msleep(priv->cfg->reset_delay_ms);
-+	gpiod_set_value_cansleep(priv->enable, 1);
-+	msleep(priv->cfg->enable_delay_ms);
-+
-+	/* MCLK last: the vendor starts it after the sequence above, not before. */
-+	ret = clk_prepare_enable(priv->mclk);
-+	if (ret)
-+		return dev_err_probe(dev, ret, "cannot enable mclk\n");
-+
-+	ret = devm_add_action_or_reset(dev, az0x_codec_disable_mclk, priv->mclk);
++	ret = devm_add_action_or_reset(dev, az0x_codec_disable_mclk, priv);
 +	if (ret)
 +		return ret;
++
++	if (priv->cfg->power_in_probe) {
++		ret = az0x_codec_power_on(priv);
++		if (ret)
++			return dev_err_probe(dev, ret, "cannot enable mclk\n");
++	}
 +
 +	priv->dai = az0x_codec_dai_template;
 +	priv->dai.playback.rates	= priv->cfg->rates;
@@ -288,7 +340,7 @@ index 000000000000..613fe6c88bd5
 +static const struct az0x_cfg az0x_cfg_all_4ch_np = { AZ0X_RATES_ALL,       4, false, 500,  50 };
 +static const struct az0x_cfg az0x_cfg_all_2ch_np = { AZ0X_RATES_ALL,       2, false, 500,  50 };
 +/* JP11 / JC16: fast enable, long reset settle, and the sequence runs at probe */
-+static const struct az0x_cfg az0x_cfg_jp11       = { SNDRV_PCM_RATE_44100, 4, true,   10, 200 };
++static const struct az0x_cfg az0x_cfg_jp11       = { SNDRV_PCM_RATE_44100, 4, true,   10, 200, true };
 +
 +static const struct of_device_id az0x_codec_of_match[] = {
 +	{ .compatible = "inmusic,acva-audio-codec", .data = &az0x_cfg_44k1_2ch   },
@@ -308,8 +360,6 @@ index 000000000000..613fe6c88bd5
 +	{ .compatible = "inmusic,jp08-audio-codec", .data = &az0x_cfg_all_4ch    },
 +	{ .compatible = "inmusic,jp11-audio-codec", .data = &az0x_cfg_jp11       },
 +	{ .compatible = "inmusic,jp12-audio-codec", .data = &az0x_cfg_all_2ch_np },
-+	{ .compatible = "inmusic,jp13-audio-codec", .data = &az0x_cfg_44k1_4ch   },
-+	{ .compatible = "inmusic,jp14-audio-codec", .data = &az0x_cfg_44k1_4ch   },
 +	{ .compatible = "inmusic,ldmd-audio-codec", .data = &az0x_cfg_44k1_8ch   },
 +	{ .compatible = "inmusic,mg01-audio-codec", .data = &az0x_cfg_all_8ch    },
 +	/* az05 family: the vendor uses a separate module whose rates are fixed */

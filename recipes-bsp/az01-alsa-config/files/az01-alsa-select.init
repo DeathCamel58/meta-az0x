@@ -1,0 +1,21 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          az01-alsa-select
+# Required-Start:    $local_fs
+# Required-Stop:
+# Default-Start:     S
+# Default-Stop:
+# Short-Description: Select the ALSA definitions for this board
+### END INIT INFO
+
+case "$1" in
+start)
+	/usr/libexec/az01-alsa-select
+	;;
+stop|restart|force-reload)
+	;;
+*)
+	echo "Usage: $0 start" >&2
+	exit 1
+	;;
+esac
