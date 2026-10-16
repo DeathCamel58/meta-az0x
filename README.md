@@ -6,11 +6,16 @@ for AZ01, RK3588 for AZ04).
 
 **What it provides:** machine configurations, a Linux kernel built from source
 with device trees and drivers for these boards, packaging for the vendor
-firmware the hardware needs, board support (boot counter, panel rotation,
-touch, jog-wheel display, network defaults), and two reference images.
+firmware the hardware needs, and board support (boot counter, panel rotation,
+touch, ALSA devices, jog-wheel display). Each machine also carries what any
+image needs to boot and fit the device: the vendor's root filesystem geometry,
+the kernel, device trees, boot script and firmware - so `core-image-minimal`
+built for one of these machines is flashable as it is.
 
-**What it does not provide:** a distribution or applications. It is used with
-Poky (or your own distro) like any other BSP layer, and application layers sit
+**What it does not provide:** a distribution, images or applications. The
+openAZ0x distribution and its images are in
+[meta-openaz0x](https://github.com/openAZ0x/meta-openaz0x); you can equally
+use Poky or your own distro, as with any BSP layer, and application layers sit
 on top. It never builds a bootloader; at flash time only the root filesystem
 partition is replaced, and the device's own U-Boot boots it.
 
@@ -31,8 +36,9 @@ and `az04` because their bootloaders only start signed kernels.
 
 ## Getting started
 
-The layer is used with Poky. Everything below assumes the layers are cloned
-side by side in one directory, which is what the template configuration expects.
+The steps below build the openAZ0x distribution (meta-openaz0x) on this BSP.
+They assume the layers are cloned side by side in one directory, which is what
+the template configuration expects.
 
 ### 1. Clone the layers
 
@@ -42,7 +48,8 @@ git clone -b scarthgap https://git.yoctoproject.org/poky
 git clone -b scarthgap https://git.openembedded.org/meta-openembedded
 git clone -b scarthgap https://git.yoctoproject.org/meta-arm
 git clone -b scarthgap https://git.yoctoproject.org/meta-rockchip
-git clone -b scarthgap-v1.0 https://github.com/DeathCamel58/meta-az0x
+git clone -b scarthgap https://github.com/openAZ0x/meta-az0x
+git clone -b scarthgap https://github.com/openAZ0x/meta-openaz0x
 ```
 
 This release was built and tested against these commits. The `scarthgap`
@@ -75,12 +82,12 @@ az0x/
 ### 3. Create a build directory
 
 ```sh
-TEMPLATECONF=$PWD/meta-az0x/conf/templates/default source poky/oe-init-build-env build
+TEMPLATECONF=$PWD/meta-openaz0x/conf/templates/default source poky/oe-init-build-env build
 ```
 
-This creates `build/conf/` with every layer above already listed and the
-settings the images need (systemd, merged /usr, PAM). `MACHINE` defaults to
-`az01-premium`; change it in `conf/local.conf` or per command.
+This creates `build/conf/` with every layer above already listed and
+`DISTRO = "openaz0x"`. `MACHINE` defaults to `az01-premium`; change it in
+`conf/local.conf` or per command.
 
 ### 4. Build
 
@@ -114,13 +121,25 @@ replaced; the bootloader and the user data partition are not touched.
 
 ## Images
 
-- `az0x-image`: a minimal, read-only root filesystem with a serial console and
-  SSH, and no vendor applications.
-- `az0x-image-desktop`: the Sato desktop, rotated for the panel, with touch
-  input and an on-screen keyboard.
-- `az01-image-engine`: a scaffold for grafting the vendor Engine application
-  stack onto the image; it needs a graft recipe that is not part of this layer
-  (see `recipes-az0x/engine/README.md`). `az01-premium` only.
+This layer has none. `az0x-image` (minimal) and `az0x-image-desktop` (Sato,
+touch, on-screen keyboard) are in meta-openaz0x. Any image works on these
+machines, `core-image-minimal` included: the machine supplies the partition
+geometry, kernel, device trees, boot script and firmware, and the build fails
+if the image outgrows the vendor's partition.
+
+### Upgrading from scarthgap-v1.0
+
+v1.0 carried the images and the distro settings in this layer. To move an
+existing build directory over:
+
+1. Clone meta-openaz0x next to meta-az0x and add it to `conf/bblayers.conf`
+   (`bitbake-layers add-layer ../meta-openaz0x`).
+2. In `conf/local.conf`, set `DISTRO = "openaz0x"` and delete the
+   `INIT_MANAGER` and `DISTRO_FEATURES` lines the old template added; the
+   distro sets them now.
+
+`az01-image-engine` and its graft sample are gone. Application stacks belong
+in their own layers.
 
 ## Kernel
 
@@ -209,16 +228,25 @@ and the power latch, are in `docs/az01-hardware-facts.md`.
 ## Dependencies
 
 ```
-URI: https://git.yoctoproject.org/poky                  layers: meta, meta-poky
-URI: https://git.openembedded.org/meta-openembedded     layer: meta-oe
+URI: https://git.yoctoproject.org/poky                  layer: meta
 URI: https://git.yoctoproject.org/meta-rockchip
 URI: https://git.yoctoproject.org/meta-arm               layers: meta-arm, meta-arm-toolchain (for meta-rockchip)
 branch: scarthgap
 ```
 
-`LAYERDEPENDS_az0x = "core rockchip openembedded-layer"`. The layer targets
+`yocto-check-layer` passes on `az01-premium`, `az01-player` and
+`az01-console`. The machines that keep the vendor's prebuilt kernel
+(`az01-mpc`, `az0x-signed`, `az04`) cannot build `world`: the prebuilt kernel
+ships no source tree, so `perf`, `kernel-devsrc` and every out-of-tree module
+have nothing to build against. Images are unaffected.
+
+`LAYERDEPENDS_az0x = "core rockchip"`. The layer targets
 scarthgap (Yocto 5.0 LTS) only: the devices run glibc 2.39 and gcc 13, and
 anything grafted from the vendor userspace must stay ABI-compatible.
+
+## Maintainer
+
+Dylan Corrales <deathcamel58@gmail.com>
 
 ## License
 
@@ -228,6 +256,6 @@ proprietary and are not distributed here.
 
 ## Contributing
 
-Issues and pull requests: <https://github.com/DeathCamel58/meta-az0x>.
+Issues and pull requests: <https://github.com/openAZ0x/meta-az0x>.
 Kernel patches follow the kernel's style, one patch per driver, each with an
 `Upstream-Status` line.
