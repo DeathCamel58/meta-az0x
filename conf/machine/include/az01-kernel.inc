@@ -31,14 +31,14 @@ AZ0X_KERNEL_PN = "${@ {'prebuilt': 'linux-az01-prebuilt', \
 PREFERRED_PROVIDER_virtual/kernel = "${AZ0X_KERNEL_PN}"
 KERNEL_IMAGETYPE = "zImage"
 
-# An override token so recipes and the image base can say ":az01-ksrc" instead
+# An override token so recipes can say ":az01-ksrc" instead
 # of threading inline python everywhere. OVERRIDES is in BB_BASEHASH_IGNORE_VARS
 # so this costs nothing in sstate.
 #
 # ORDERING: this APPENDS (.=), it does not prepend. In BitBake the LAST matching
 # override wins, and az01-common.inc already did `MACHINEOVERRIDES =. "az01:"`.
 # Prepending here would put az01-ksrc *before* az01 and so make it lose, which
-# is exactly what happened first time round: AZ0X_KERNEL_INSTALL:az01 kept
+# is exactly what happened first time round: an ":az01" assignment kept
 # beating :az01-ksrc and the image still asked for kernel-devicetree.
 MACHINEOVERRIDES .= "${@':az01-kprebuilt' if (d.getVar('AZ0X_KERNEL_PROVIDER') or 'yocto') == 'prebuilt' else ':az01-ksrc'}"
 

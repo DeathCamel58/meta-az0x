@@ -24,7 +24,7 @@ has the layer emit an unsigned FIT in the vendor shape.
 |---|---|
 | `conf/machine/include/az01-kernel.inc` | Comment now states az0x-signed boots a signed FIT and that the from-source path emits an unsigned one. |
 | `conf/machine/az0x-signed.conf` | Header documents the opt-in from-source/FIT path. |
-| `recipes-core/images/az0x-image-base.inc` | Guard comment describes the FIT path; the opt-in and its error are unchanged. |
+| `recipes-kernel/linux/az01-kernel-provider-check.inc` | The opt-in check for an unsigned kernel; unchanged in substance. |
 | `README.md` | "Booting what you build" documents the FIT and the `DEPLOY_DIR_IMAGE` artifacts. |
 | `recipes-kernel/linux/az01-kernel.inc` | Requires `az0x-signed-fit.inc`, so both `linux-yocto` and `linux-yocto-rt` get it. |
 | `recipes-kernel/linux/az0x-signed-fit.inc` | **New.** FIT policy and the `do_deploy:append:az0x-signed` task. |

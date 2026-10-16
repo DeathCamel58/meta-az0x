@@ -23,6 +23,9 @@ require az0x-prebuilt-kernel.inc
 # Matches the shared "az01" MACHINEOVERRIDE set by az01-common.inc.
 COMPATIBLE_MACHINE = "az01"
 
+# Refuse an AZ0X_KERNEL_PROVIDER that would not boot; see the include.
+require az01-kernel-provider-check.inc
+
 KERNEL_IMAGETYPE ?= "zImage"
 
 # az01 boots the kernel and dtb OUT OF THE ROOTFS: the vendor boot.scr.uimg

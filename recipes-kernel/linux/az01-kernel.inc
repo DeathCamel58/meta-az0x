@@ -141,3 +141,6 @@ SRC_URI:append:az01 = " file://0014-nvmem-rockchip-add-RK3288-secure-bank-word-r
 # the other boards use. Gated internally on the az0x-signed override; a no-op
 # everywhere else. See the include for the FIT shape it emits.
 require az0x-signed-fit.inc
+
+# Refuse an AZ0X_KERNEL_PROVIDER that would not boot; see the include.
+require az01-kernel-provider-check.inc

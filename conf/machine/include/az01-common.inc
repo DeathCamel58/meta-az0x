@@ -14,10 +14,11 @@
 # container header. Each board conf declares three facts and nothing else:
 # AZ0X_BOARD_DIR (its vendor/ subdir), AZ0X_BOARD_KVER and AZ0X_ROOTFS_KIB.
 #
-# Every board here REUSES the vendor's compiled kernel, device trees, boot
-# script and kernel modules as opaque prebuilts. Nothing builds a kernel or a
-# bootloader: at flash time the vendor's own BOOT partitions are kept and only
-# the rootfs partition is replaced. See ../../../README.md.
+# The kernel is built from source by default (linux-yocto 6.6 with this
+# layer's device trees and drivers), or the vendor's compiled kernel can be
+# staged instead; see az01-kernel.inc. No bootloader is built: the vendor's
+# u-boot loads the kernel and device tree from the rootfs, and at flash time
+# only the rootfs partition is replaced. See ../../../README.md.
 
 # rk3288 basics from meta-rockchip: SOC_FAMILY, rockchip MACHINEOVERRIDES and
 # the cortexa17 tune include. We deliberately do NOT require rockchip-wic.inc
@@ -25,13 +26,12 @@
 require conf/machine/include/rk3288.inc
 
 # Every az01-family board carries this override, so the prebuilt kernel recipe
-# and the image base can say ":az01" once instead of listing four machines.
+# and the board recipes can say ":az01" once instead of listing four machines.
 MACHINEOVERRIDES =. "az01:"
 
-# ext4 geometry common to the whole family; only the block COUNT is per-board
-# (AZ0X_ROOTFS_KIB, set in each board conf).
-AZ0X_EXT4_BLOCKSIZE = "1024"
-AZ0X_EXT4_INODE_RATIO = "4096"
+# The rootfs partition every image must fit; only the block COUNT is
+# per-board (AZ0X_ROOTFS_KIB, set in each board conf).
+require conf/machine/include/az0x-rootfs.inc
 
 # --- Toolchain / ABI -------------------------------------------------------
 # Vendor binaries report: Tag_CPU_name "7VE", Tag_CPU_arch v7, Thumb-2,
@@ -41,7 +41,7 @@ AZ0X_EXT4_INODE_RATIO = "4096"
 DEFAULTTUNE = "cortexa17thf-neon-vfpv4"
 
 # --- Kernel ----------------------------------------------------------------
-# Provider is switchable; see the include. Default is the vendor prebuilt.
+# Provider is switchable; see the include. Default is linux-yocto from source.
 require conf/machine/include/az01-kernel.inc
 
 # --- Bootloader ------------------------------------------------------------
@@ -53,11 +53,26 @@ MACHINE_FEATURES:remove = "efi"
 EXTRA_IMAGEDEPENDS = ""
 IMAGE_BOOT_FILES = ""
 
-# --- Image -----------------------------------------------------------------
-# A bare ext4 filesystem is exactly what the AZ01 container wants for its
-# rootfs partition. No wic, no sdimg, no partition table.
-IMAGE_FSTYPES = "ext4"
-IMAGE_CLASSES:remove = "image_types_wic"
+# --- Boot ------------------------------------------------------------------
+# The vendor u-boot loads zImage and the dtb OUT OF THE ROOTFS partition's
+# /boot, through the boot script it finds there, so all three must be in every
+# image - drop any of them and the device will not boot. Which recipe supplies
+# the dtbs: the kernel's own kernel-devicetree, plus AZ0X_DTB_INSTALL for the
+# case of a source kernel booting the vendor dtbs (az01-vendor-devicetree).
+# az0x-signed boots a FIT from its own partition and needs no boot script.
+AZ0X_BOOTSCRIPT_INSTALL ?= "az01-bootscript"
+AZ0X_DTB_INSTALL ?= ""
+MACHINE_ESSENTIAL_EXTRA_RDEPENDS += " \
+    kernel-image \
+    kernel-devicetree \
+    ${AZ0X_DTB_INSTALL} \
+    ${AZ0X_BOOTSCRIPT_INSTALL} \
+"
+
+# Board-tuned firmware (Broadcom Wi-Fi/Bluetooth NVRAM and patchram, touch,
+# DSP) from the vendor files; linux-firmware has nothing that brings this
+# hardware up.
+MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "az0x-firmware"
 
 # --- Console / hardware ----------------------------------------------------
 # rk3288.inc sets 115200;ttyS2, which matches the vendor boot.scr.uimg and the
