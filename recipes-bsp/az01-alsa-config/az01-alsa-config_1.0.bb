@@ -15,7 +15,7 @@ SRC_URI = " \
     file://boards/JP13.conf \
 "
 
-S = "${WORKDIR}"
+S = "${UNPACKDIR}"
 
 COMPATIBLE_MACHINE = "az01"
 PACKAGE_ARCH = "${MACHINE_ARCH}"

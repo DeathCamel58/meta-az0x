@@ -31,7 +31,7 @@ python () {
             "\"Vendor files\")" % path)
 }
 
-S = "${WORKDIR}"
+S = "${UNPACKDIR}"
 
 KERNEL_VERSION = "${AZ0X_KVER}"
 

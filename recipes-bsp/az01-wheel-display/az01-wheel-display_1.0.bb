@@ -13,7 +13,7 @@ SRC_URI = " \
     file://90-az01-wheel-display.rules \
 "
 
-S = "${WORKDIR}"
+S = "${UNPACKDIR}"
 
 COMPATIBLE_MACHINE = "az01"
 PACKAGE_ARCH = "${MACHINE_ARCH}"

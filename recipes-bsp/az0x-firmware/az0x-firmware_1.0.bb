@@ -42,7 +42,7 @@ python () {
             "vendor files not staged: %s is missing (see the meta-az0x README, "
             "\"Vendor files\")" % path)
 }
-S = "${WORKDIR}"
+S = "${UNPACKDIR}"
 
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 

@@ -15,7 +15,7 @@ SRC_URI = " \
     file://az01-bootcount-reset.init \
 "
 
-S = "${WORKDIR}"
+S = "${UNPACKDIR}"
 
 COMPATIBLE_MACHINE = "az01"
 PACKAGE_ARCH = "${MACHINE_ARCH}"

@@ -95,7 +95,7 @@ do_deploy:append:az0x-signed() {
 
     # 1. The command-line overlay: a one-fragment /chosen/bootargs dtbo.
     sed -e "s|@@BOOTARGS@@|${AZ0X_FIT_BOOTARGS}|g" \
-        "${WORKDIR}/fdt-cmdline.dts.in" > "$fitwork/fdt-cmdline.dts"
+        "${UNPACKDIR}/fdt-cmdline.dts.in" > "$fitwork/fdt-cmdline.dts"
     dtc -@ -I dts -O dtb "$fitwork/fdt-cmdline.dts" -o "$fitwork/fdt-cmdline.dtbo"
 
     # 2. The image description, with the boot-tool-visible node names above.
@@ -107,7 +107,7 @@ do_deploy:append:az0x-signed() {
         -e "s|@@KERNEL_ENTRYPOINT@@|${AZ0X_FIT_KERNEL_ENTRYPOINT}|g" \
         -e "s|@@FDT_LOADADDRESS@@|${AZ0X_FIT_FDT_LOADADDRESS}|g" \
         -e "s|@@CMDLINE_LOADADDRESS@@|${AZ0X_FIT_CMDLINE_LOADADDRESS}|g" \
-        "${WORKDIR}/kernel.its.in" > "$fitwork/kernel.its"
+        "${UNPACKDIR}/kernel.its.in" > "$fitwork/kernel.its"
 
     mkimage -f "$fitwork/kernel.its" "${DEPLOYDIR}/${AZ0X_FIT_NAME}"
 

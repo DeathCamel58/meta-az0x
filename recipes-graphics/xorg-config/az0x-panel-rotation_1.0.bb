@@ -33,7 +33,7 @@ REQUIRED_DISTRO_FEATURES = "x11"
 SRC_URI = "file://az0x-panel-rotation.sh \
            file://az0x-panel-rotation.service \
            file://az0x-panel-rotation.tmpfiles"
-S = "${WORKDIR}"
+S = "${UNPACKDIR}"
 
 # Which connector to rotate. Every AZ0x panel is on DSI-1; overridable per
 # machine if that ever stops being true.

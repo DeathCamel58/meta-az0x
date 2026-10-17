@@ -39,7 +39,7 @@ SRC_URI[license_wifi.sha256sum] = "07082fd0bb65e32c73af39a2292dd6c83f169be7427d3
 SRC_URI[license_bluetooth.sha256sum] = "5f6acad870790f7e23150a30cab85c643f926266bf16e6a63acbde4257b957d4"
 SRC_URI[license_broadcom.sha256sum] = "5881e9e347d00304b9042efe2f5d48099500a0ddbd352dd808a2ff4108f8fbbe"
 
-S = "${WORKDIR}"
+S = "${UNPACKDIR}"
 # The board-qualified NVRAM links depend on the machine's BCM43456_AP6256_BOARDS,
 # so these packages are not architecture-neutral.
 PACKAGE_ARCH = "${MACHINE_ARCH}"
