@@ -119,6 +119,20 @@ replaced; the bootloader and the user data partition are not touched.
 > `oem flash-bootloader`.** The same unlock enables them and all four are
 > destructive.
 
+## BCM43456 wireless firmware
+
+The BCM43456 Wi-Fi and BCM4345C5 Bluetooth payloads come from one of two
+sources, selected per machine with `AZ0X_WIFI_FIRMWARE`:
+
+- `vendor` (default) - the blobs `az0x-firmware` copies from the vendor tree.
+- `public` - the pinned, CLM-carrying set in `bcm43456-firmware-public`;
+  `az0x-firmware` then omits the two overlapping files.
+
+`az0x-signed` selects `public`. AP6256 module data and its board-qualified
+links are driven by `BCM43456_AP6256_BOARDS` in the machine configuration. The
+network-manager and radio-enable policy is in meta-openaz0x. See
+[BCM43456 firmware](docs/bcm43456-firmware.md).
+
 ## Images
 
 This layer has none. `az0x-image` (minimal) and `az0x-image-desktop` (Sato,

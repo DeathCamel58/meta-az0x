@@ -74,6 +74,18 @@ MACHINE_ESSENTIAL_EXTRA_RDEPENDS += " \
 # hardware up.
 MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "az0x-firmware"
 
+# Which source provides the BCM43456 Wi-Fi / BCM4345C5 Bluetooth payloads.
+# "vendor" keeps the blobs az0x-firmware copies out of the vendor tree;
+# "public" uses the pinned, CLM-carrying set from bcm43456-firmware-public and
+# az0x-firmware omits the overlapping files, so exactly one package installs
+# them. A machine sets this when its part is covered by the public set.
+AZ0X_WIFI_FIRMWARE ?= "vendor"
+MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "${@bb.utils.contains('AZ0X_WIFI_FIRMWARE', 'public', 'bcm43456-firmware-public', '', d)}"
+# The optional AP6256 module data (and its board-qualified links) belongs to
+# the public set only; BCM43456_AP6256_BOARDS is set per machine, and a machine
+# may select the public set without listing any board.
+MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "${@'bcm43456-firmware-public-nvram-ap6256' if d.getVar('AZ0X_WIFI_FIRMWARE') == 'public' and (d.getVar('BCM43456_AP6256_BOARDS') or '').split() else ''}"
+
 # --- Console / hardware ----------------------------------------------------
 # rk3288.inc sets 115200;ttyS2, which matches the vendor boot.scr.uimg and the
 # dtb chosen node (stdout-path = "serial2:115200n8"). bootargs carry no
