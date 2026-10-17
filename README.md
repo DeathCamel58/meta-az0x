@@ -30,9 +30,10 @@ partition is replaced, and the device's own U-Boot boots it.
 | `az0x-signed` | signed-boot generation | jc11s, jp11s, jp20, jp21, jp21x, jp23 | vendor 6.1.111 | rootfs only, see [Booting what you build](#booting-what-you-build) |
 | `az04` | Planck AZ04 (Rane SYSTEM ONE) | rmz2 | vendor 6.18.9 | scaffold only |
 
-The from-source kernel is linux-yocto 6.6 (PREEMPT_RT optional). `az01-mpc`
-keeps its vendor kernel by default because it is newer than ours; `az0x-signed`
-and `az04` because their bootloaders only start signed kernels.
+The from-source kernel is linux-yocto 6.18 (PREEMPT_RT optional). `az01-mpc`
+keeps its vendor kernel by default because our device trees and drivers are
+untried on it; `az0x-signed` and `az04` because their bootloaders only start
+signed kernels.
 
 ## Getting started
 
@@ -44,24 +45,34 @@ the template configuration expects.
 
 ```sh
 mkdir az0x && cd az0x
-git clone -b scarthgap https://git.yoctoproject.org/poky
-git clone -b scarthgap https://git.openembedded.org/meta-openembedded
-git clone -b scarthgap https://git.yoctoproject.org/meta-arm
-git clone -b scarthgap https://git.yoctoproject.org/meta-rockchip
-git clone -b scarthgap https://github.com/openAZ0x/meta-az0x
-git clone -b scarthgap https://github.com/openAZ0x/meta-openaz0x
+git clone -b 2.18 https://git.openembedded.org/bitbake
+git clone -b wrynose https://git.openembedded.org/openembedded-core
+git clone -b wrynose https://git.yoctoproject.org/meta-yocto
+git clone -b wrynose https://git.openembedded.org/meta-openembedded
+git clone -b wrynose https://git.yoctoproject.org/meta-arm
+git clone -b wrynose https://git.yoctoproject.org/meta-rockchip
+git clone -b wrynose https://github.com/openAZ0x/meta-az0x
+git clone -b wrynose https://github.com/openAZ0x/meta-openaz0x
 ```
 
-This release was built and tested against these commits. The `scarthgap`
+There is no poky repository for wrynose: bitbake, openembedded-core and
+meta-yocto (which holds meta-poky) are cloned separately.
+
+This branch was built and tested against these commits. The `wrynose`
 branches only take fixes, so their tips normally work too; check these out if
 they do not:
 
 | layer | commit |
 |---|---|
-| poky | `4fb7016a07507683359ebd620f1951fd5ea44bfa` (yocto-5.0.20-167) |
-| meta-openembedded | `0f00f8b9a21950640da8c5707343e5540133f86e` |
-| meta-arm | `0a4b911d9fd63ab29c4532a907fae3282dbdcfe4` |
-| meta-rockchip | `9690180b7e9953361958c962b80d891eda8c1028` |
+| bitbake | `6e260eb6a` |
+| openembedded-core | `636e5d3b12` (yocto-6.0.3-312) |
+| meta-yocto | `7c25b111` |
+| meta-openembedded | `f28a144aa0` |
+| meta-arm | `673e8d7c` |
+| meta-rockchip | `9d02575` |
+
+For Yocto 5.0 (scarthgap), use the `scarthgap` branch of both openAZ0x
+layers; `scarthgap-v2.0` is its latest release.
 
 ### 2. Stage the vendor files
 
@@ -74,7 +85,8 @@ By default the layer reads them from `vendor/` next to `meta-az0x`:
 
 ```
 az0x/
-├── poky/  meta-openembedded/  meta-arm/  meta-rockchip/  meta-az0x/
+├── bitbake/  openembedded-core/  meta-yocto/  meta-openembedded/
+├── meta-arm/  meta-rockchip/  meta-az0x/  meta-openaz0x/
 └── vendor/
     └── az01-premium/  (one directory per machine)
 ```
@@ -82,7 +94,7 @@ az0x/
 ### 3. Create a build directory
 
 ```sh
-TEMPLATECONF=$PWD/meta-openaz0x/conf/templates/default source poky/oe-init-build-env build
+TEMPLATECONF=$PWD/meta-openaz0x/conf/templates/default source openembedded-core/oe-init-build-env build
 ```
 
 This creates `build/conf/` with every layer above already listed and
@@ -141,19 +153,21 @@ machines, `core-image-minimal` included: the machine supplies the partition
 geometry, kernel, device trees, boot script and firmware, and the build fails
 if the image outgrows the vendor's partition.
 
-### Upgrading from scarthgap-v1.0
+### Moving a build directory from scarthgap
 
-v1.0 carried the images and the distro settings in this layer. To move an
-existing build directory over:
+1. Clone bitbake, openembedded-core and meta-yocto as above, and check out
+   `wrynose` in every other layer.
+2. In `conf/bblayers.conf`, replace `poky/meta` with `openembedded-core/meta`,
+   and `poky/meta-poky` and `poky/meta-yocto-bsp` with the same directories
+   under `meta-yocto/`. Remove any layer that does not support wrynose yet;
+   BitBake names them.
+3. In `conf/local.conf`, replace `debug-tweaks`, which no longer exists, with
+   `allow-empty-password empty-root-password allow-root-login`, and point
+   `TMPDIR` at a new directory so the two releases' builds stay apart.
+4. From now on run `source openembedded-core/oe-init-build-env build`.
 
-1. Clone meta-openaz0x next to meta-az0x and add it to `conf/bblayers.conf`
-   (`bitbake-layers add-layer ../meta-openaz0x`).
-2. In `conf/local.conf`, set `DISTRO = "openaz0x"` and delete the
-   `INIT_MANAGER` and `DISTRO_FEATURES` lines the old template added; the
-   distro sets them now.
-
-`az01-image-engine` and its graft sample are gone. Application stacks belong
-in their own layers.
+Builds from scarthgap-v1.0 also need the steps in the `scarthgap` branch's
+README first, because the distro moved to meta-openaz0x in scarthgap-v2.0.
 
 ## Kernel
 
@@ -162,7 +176,7 @@ modules:
 
 | value | what you get |
 |---|---|
-| `yocto` | linux-yocto 6.6 with this layer's device trees and drivers (default on `az01-premium`, `az01-player`, `az01-console`) |
+| `yocto` | linux-yocto 6.18 with this layer's device trees and drivers (default on `az01-premium`, `az01-player`, `az01-console`) |
 | `yocto-rt` | the same with PREEMPT_RT |
 | `prebuilt` | the vendor's own compiled kernel, device trees and modules, staged from `vendor/` (default on `az01-mpc`, `az0x-signed`, `az04`) |
 
@@ -174,10 +188,9 @@ trees, see `tools/dts/README.md`), the DC-jack power driver, the panel drivers,
 the audio codec and machine driver, the USB hub attach driver, and fixes to
 in-tree drivers. Each patch states its own `Upstream-Status`.
 
-Choosing the source kernel on `az01-mpc` (a downgrade from 6.18) or on
-`az0x-signed` (an unsigned kernel) is refused unless you also set
-`AZ0X_KERNEL_ALLOW_DOWNGRADE = "1"` or `AZ0X_KERNEL_ALLOW_UNSIGNED = "1"`,
-so neither happens by accident.
+Choosing the source kernel on `az0x-signed` (an unsigned kernel) is refused
+unless you also set `AZ0X_KERNEL_ALLOW_UNSIGNED = "1"`, so it does not happen
+by accident.
 
 The source kernel also provides GPL read-only RK3288 secure-eFuse support for
 board metadata. See [driver details and verification](docs/rk3288-secure-efuse.md).
@@ -242,10 +255,10 @@ and the power latch, are in `docs/az01-hardware-facts.md`.
 ## Dependencies
 
 ```
-URI: https://git.yoctoproject.org/poky                  layer: meta
+URI: https://git.openembedded.org/openembedded-core     layer: meta
 URI: https://git.yoctoproject.org/meta-rockchip
 URI: https://git.yoctoproject.org/meta-arm               layers: meta-arm, meta-arm-toolchain (for meta-rockchip)
-branch: scarthgap
+branch: wrynose
 ```
 
 `yocto-check-layer` passes on `az01-premium`, `az01-player` and
@@ -254,9 +267,10 @@ branch: scarthgap
 ships no source tree, so `perf`, `kernel-devsrc` and every out-of-tree module
 have nothing to build against. Images are unaffected.
 
-`LAYERDEPENDS_az0x = "core rockchip"`. The layer targets
-scarthgap (Yocto 5.0 LTS) only: the devices run glibc 2.39 and gcc 13, and
-anything grafted from the vendor userspace must stay ABI-compatible.
+`LAYERDEPENDS_az0x = "core rockchip"`. This branch targets wrynose (Yocto
+6.0 LTS): glibc 2.43 and gcc 15. The vendor userspace was built with glibc
+2.39 and gcc 13; glibc and libstdc++ are backward compatible, so vendor
+binaries run on the newer libraries, but not the other way round.
 
 ## Maintainer
 
