@@ -82,8 +82,9 @@ MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "az0x-firmware"
 AZ0X_WIFI_FIRMWARE ?= "vendor"
 MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "${@bb.utils.contains('AZ0X_WIFI_FIRMWARE', 'public', 'bcm43456-firmware-public', '', d)}"
 # The optional AP6256 module data (and its board-qualified links) belongs to
-# the public set only; BCM43456_AP6256_BOARDS is set per machine.
-MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "${@'bcm43456-firmware-public-nvram-ap6256' if d.getVar('AZ0X_WIFI_FIRMWARE') == 'public' and d.getVar('BCM43456_AP6256_BOARDS').split() else ''}"
+# the public set only; BCM43456_AP6256_BOARDS is set per machine, and a machine
+# may select the public set without listing any board.
+MACHINE_ESSENTIAL_EXTRA_RDEPENDS += "${@'bcm43456-firmware-public-nvram-ap6256' if d.getVar('AZ0X_WIFI_FIRMWARE') == 'public' and (d.getVar('BCM43456_AP6256_BOARDS') or '').split() else ''}"
 
 # --- Console / hardware ----------------------------------------------------
 # rk3288.inc sets 115200;ttyS2, which matches the vendor boot.scr.uimg and the

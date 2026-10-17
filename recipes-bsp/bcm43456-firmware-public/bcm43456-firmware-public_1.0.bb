@@ -8,13 +8,13 @@ created for the machines in BCM43456_AP6256_BOARDS."
 # Reused distribution notices, kept next to the payloads they cover.
 LICENSE = "Firmware-synaptics & Firmware-cypress & Firmware-broadcom_bcm43xx"
 LIC_FILES_CHKSUM = " \
-    file://${PN}-LICENSE.Wifi-distribution;md5=ef71bd8fbfc3d820a46061421760e8e9 \
-    file://${PN}-LICENSE.Bluetooth-distribution;md5=72df60cd2ebffa2d1fe68ecefaea1edc \
-    file://${PN}-LICENSE.Broadcom;md5=93ed41f137a046c1aeee98f3f60017d2 \
+    file://${BPN}-LICENSE.Wifi-distribution;md5=ef71bd8fbfc3d820a46061421760e8e9 \
+    file://${BPN}-LICENSE.Bluetooth-distribution;md5=72df60cd2ebffa2d1fe68ecefaea1edc \
+    file://${BPN}-LICENSE.Broadcom;md5=93ed41f137a046c1aeee98f3f60017d2 \
 "
-NO_GENERIC_LICENSE[Firmware-synaptics] = "${PN}-LICENSE.Wifi-distribution"
-NO_GENERIC_LICENSE[Firmware-cypress] = "${PN}-LICENSE.Bluetooth-distribution"
-NO_GENERIC_LICENSE[Firmware-broadcom_bcm43xx] = "${PN}-LICENSE.Broadcom"
+NO_GENERIC_LICENSE[Firmware-synaptics] = "${BPN}-LICENSE.Wifi-distribution"
+NO_GENERIC_LICENSE[Firmware-cypress] = "${BPN}-LICENSE.Bluetooth-distribution"
+NO_GENERIC_LICENSE[Firmware-broadcom_bcm43xx] = "${BPN}-LICENSE.Broadcom"
 
 WIFI_RELEASE = "3bab0f823f5b53150b76aab77093adef6655b920"
 BT_RELEASE = "a6d4105d0989103ea6384b65940c76add1914127"
@@ -23,13 +23,13 @@ NVRAM_RELEASE = "cd0502653db3739843b0a41a560b66dcf245567b"
 BRCM_LICENSE_RELEASE = "ed63c1b592979a469c94fbe8f67a16c8d7f9c67d"
 
 SRC_URI = " \
-    https://raw.githubusercontent.com/RPi-Distro/firmware-nonfree/${WIFI_RELEASE}/debian/added-firmware/brcm/brcmfmac43456-sdio.bin;name=wifi;downloadfilename=${PN}-wifi.bin;unpack=0 \
-    https://raw.githubusercontent.com/RPi-Distro/firmware-nonfree/${WIFI_RELEASE}/debian/added-firmware/brcm/brcmfmac43456-sdio.clm_blob;name=clm;downloadfilename=${PN}-wifi.clm_blob;unpack=0 \
-    https://raw.githubusercontent.com/LibreELEC/brcmfmac_sdio-firmware/${NVRAM_RELEASE}/brcmfmac43456-sdio.txt;name=nvram;downloadfilename=${PN}-module-nvram.txt;unpack=0 \
-    https://raw.githubusercontent.com/RPi-Distro/bluez-firmware/${BT_RELEASE}/broadcom/BCM4345C5.hcd;name=bluetooth;downloadfilename=${PN}-bluetooth.hcd;unpack=0 \
-    https://raw.githubusercontent.com/RPi-Distro/firmware-nonfree/${WIFI_RELEASE}/debian/copyright;name=license_wifi;downloadfilename=${PN}-LICENSE.Wifi-distribution \
-    https://raw.githubusercontent.com/RPi-Distro/bluez-firmware/${BT_LICENSE_RELEASE}/debian/copyright;name=license_bluetooth;downloadfilename=${PN}-LICENSE.Bluetooth-distribution \
-    https://raw.githubusercontent.com/LibreELEC/LibreELEC.tv/${BRCM_LICENSE_RELEASE}/licenses/LicenseRef-firmware-Broadcom.txt;name=license_broadcom;downloadfilename=${PN}-LICENSE.Broadcom \
+    https://raw.githubusercontent.com/RPi-Distro/firmware-nonfree/${WIFI_RELEASE}/debian/added-firmware/brcm/brcmfmac43456-sdio.bin;name=wifi;downloadfilename=${BPN}-wifi.bin \
+    https://raw.githubusercontent.com/RPi-Distro/firmware-nonfree/${WIFI_RELEASE}/debian/added-firmware/brcm/brcmfmac43456-sdio.clm_blob;name=clm;downloadfilename=${BPN}-wifi.clm_blob \
+    https://raw.githubusercontent.com/LibreELEC/brcmfmac_sdio-firmware/${NVRAM_RELEASE}/brcmfmac43456-sdio.txt;name=nvram;downloadfilename=${BPN}-module-nvram.txt \
+    https://raw.githubusercontent.com/RPi-Distro/bluez-firmware/${BT_RELEASE}/broadcom/BCM4345C5.hcd;name=bluetooth;downloadfilename=${BPN}-bluetooth.hcd \
+    https://raw.githubusercontent.com/RPi-Distro/firmware-nonfree/${WIFI_RELEASE}/debian/copyright;name=license_wifi;downloadfilename=${BPN}-LICENSE.Wifi-distribution \
+    https://raw.githubusercontent.com/RPi-Distro/bluez-firmware/${BT_LICENSE_RELEASE}/debian/copyright;name=license_bluetooth;downloadfilename=${BPN}-LICENSE.Bluetooth-distribution \
+    https://raw.githubusercontent.com/LibreELEC/LibreELEC.tv/${BRCM_LICENSE_RELEASE}/licenses/LicenseRef-firmware-Broadcom.txt;name=license_broadcom;downloadfilename=${BPN}-LICENSE.Broadcom \
 "
 SRC_URI[wifi.sha256sum] = "ddf83f2100885b166be52d21c8966db164fdd4e1d816aca2acc67ee9cc28d726"
 SRC_URI[clm.sha256sum] = "2dbd7d22fc9af0eb560ceab45b19646d211bc7b34a1dd00c6bfac5dd6ba25e8a"
@@ -58,27 +58,27 @@ LICENSE:${PN}-nvram-ap6256 = "Firmware-broadcom_bcm43xx"
 FILES:${PN}-nvram-ap6256 = " \
     ${nonarch_base_libdir}/firmware/brcm/brcmfmac43456-sdio.ap6256.txt \
     ${nonarch_base_libdir}/firmware/LICENSE.bcm43456-public.Nvram \
-    ${@''.join('${nonarch_base_libdir}/firmware/brcm/brcmfmac43456-sdio.%s.txt ' % b for b in d.getVar('BCM43456_AP6256_BOARDS').split())} \
+    ${@''.join('${nonarch_base_libdir}/firmware/brcm/brcmfmac43456-sdio.%s.txt ' % b for b in (d.getVar('BCM43456_AP6256_BOARDS') or '').split())} \
 "
 
 do_compile[noexec] = "1"
 
 do_install() {
     install -d ${D}${nonarch_base_libdir}/firmware/brcm
-    install -m 0644 ${DL_DIR}/${PN}-wifi.bin ${D}${nonarch_base_libdir}/firmware/brcm/brcmfmac43456-sdio.bin
-    install -m 0644 ${DL_DIR}/${PN}-wifi.clm_blob ${D}${nonarch_base_libdir}/firmware/brcm/brcmfmac43456-sdio.clm_blob
-    install -m 0644 ${DL_DIR}/${PN}-bluetooth.hcd ${D}${nonarch_base_libdir}/firmware/brcm/BCM4345C5.hcd
+    install -m 0644 ${S}/${BPN}-wifi.bin ${D}${nonarch_base_libdir}/firmware/brcm/brcmfmac43456-sdio.bin
+    install -m 0644 ${S}/${BPN}-wifi.clm_blob ${D}${nonarch_base_libdir}/firmware/brcm/brcmfmac43456-sdio.clm_blob
+    install -m 0644 ${S}/${BPN}-bluetooth.hcd ${D}${nonarch_base_libdir}/firmware/brcm/BCM4345C5.hcd
 
     # Module data is not a universal fallback: the board must select it.
-    install -m 0644 ${DL_DIR}/${PN}-module-nvram.txt ${D}${nonarch_base_libdir}/firmware/brcm/brcmfmac43456-sdio.ap6256.txt
+    install -m 0644 ${S}/${BPN}-module-nvram.txt ${D}${nonarch_base_libdir}/firmware/brcm/brcmfmac43456-sdio.ap6256.txt
     for board in ${BCM43456_AP6256_BOARDS}; do
         ln -s brcmfmac43456-sdio.ap6256.txt ${D}${nonarch_base_libdir}/firmware/brcm/brcmfmac43456-sdio.$board.txt
     done
 
     # Keep the notices in the firmware package itself, not an optional -doc split.
-    install -m 0644 ${S}/${PN}-LICENSE.Wifi-distribution ${D}${nonarch_base_libdir}/firmware/LICENSE.bcm43456-public.Wifi
-    install -m 0644 ${S}/${PN}-LICENSE.Bluetooth-distribution ${D}${nonarch_base_libdir}/firmware/LICENSE.bcm43456-public.Bluetooth
-    install -m 0644 ${S}/${PN}-LICENSE.Broadcom ${D}${nonarch_base_libdir}/firmware/LICENSE.bcm43456-public.Nvram
+    install -m 0644 ${S}/${BPN}-LICENSE.Wifi-distribution ${D}${nonarch_base_libdir}/firmware/LICENSE.bcm43456-public.Wifi
+    install -m 0644 ${S}/${BPN}-LICENSE.Bluetooth-distribution ${D}${nonarch_base_libdir}/firmware/LICENSE.bcm43456-public.Bluetooth
+    install -m 0644 ${S}/${BPN}-LICENSE.Broadcom ${D}${nonarch_base_libdir}/firmware/LICENSE.bcm43456-public.Nvram
 }
 
 FILES:${PN} += "${nonarch_base_libdir}/firmware/brcm/brcmfmac43456-sdio.bin \
