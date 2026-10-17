@@ -1,4 +1,4 @@
-From 94dc11d7dd4813ce8774b7e23cf6cfdeaadef258 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: az0x <dev@localhost>
 Date: Thu, 17 Sep 2026 14:47:50 -0400
 Subject: [PATCH] power: supply: add inMusic AZ01 DC-jack supply driver
@@ -40,7 +40,7 @@ compatible is a vendor one, so this is not in upstreamable form.
  create mode 100644 drivers/power/supply/az01-power.c
 
 diff --git a/drivers/power/supply/Kconfig b/drivers/power/supply/Kconfig
-index a61bb12..abfdc78 100644
+index dca4be23ee70..eb85e2b578c5 100644
 --- a/drivers/power/supply/Kconfig
 +++ b/drivers/power/supply/Kconfig
 @@ -28,6 +28,17 @@ config POWER_SUPPLY_HWMON
@@ -62,11 +62,11 @@ index a61bb12..abfdc78 100644
  	tristate "APM emulation for class batteries"
  	depends on APM_EMULATION
 diff --git a/drivers/power/supply/Makefile b/drivers/power/supply/Makefile
-index a8a9fa6..a0abc8f 100644
+index 99a820d38197..06f6877a0d5d 100644
 --- a/drivers/power/supply/Makefile
 +++ b/drivers/power/supply/Makefile
-@@ -9,6 +9,7 @@ obj-$(CONFIG_POWER_SUPPLY)	+= power_supply.o
- obj-$(CONFIG_POWER_SUPPLY_HWMON) += power_supply_hwmon.o
+@@ -10,6 +10,7 @@ obj-$(CONFIG_POWER_SUPPLY_HWMON) += power_supply_hwmon.o
+ obj-$(CONFIG_ADC_BATTERY_HELPER) += adc-battery-helper.o
  obj-$(CONFIG_GENERIC_ADC_BATTERY)	+= generic-adc-battery.o
  
 +obj-$(CONFIG_AZ01_POWER)	+= az01-power.o
@@ -75,7 +75,7 @@ index a8a9fa6..a0abc8f 100644
  obj-$(CONFIG_IP5XXX_POWER)	+= ip5xxx_power.o
 diff --git a/drivers/power/supply/az01-power.c b/drivers/power/supply/az01-power.c
 new file mode 100644
-index 0000000..a682e63
+index 000000000000..68ffeefd3984
 --- /dev/null
 +++ b/drivers/power/supply/az01-power.c
 @@ -0,0 +1,202 @@
@@ -238,7 +238,7 @@ index 0000000..a682e63
 +		return dev_err_probe(dev, -EINVAL,
 +				     "inmusic,divider-ratio must not be zero\n");
 +
-+	cfg.of_node = dev->of_node;
++	cfg.fwnode = dev_fwnode(dev);
 +	cfg.drv_data = p;
 +
 +	p->psy = devm_power_supply_register(dev, &az01_power_desc, &cfg);
@@ -281,6 +281,3 @@ index 0000000..a682e63
 +
 +MODULE_DESCRIPTION("inMusic AZ01 DC-jack power supply");
 +MODULE_LICENSE("GPL");
--- 
-2.43.0
-

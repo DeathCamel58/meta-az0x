@@ -4,14 +4,14 @@
 # prebuilt, or a kernel we build from source. This is a switch rather than a
 # replacement, so either can be bisected against the other.
 #
-#   AZ0X_KERNEL_PROVIDER = "yocto"      linux-yocto 6.6, LINUX_KERNEL_TYPE=standard
+#   AZ0X_KERNEL_PROVIDER = "yocto"      linux-yocto 6.18, LINUX_KERNEL_TYPE=standard
 #                                       (default: verified on a Prime Go and an SC6000)
-#                        = "yocto-rt"   linux-yocto-rt 6.6, preempt-rt
+#                        = "yocto-rt"   linux-yocto-rt 6.18, preempt-rt
 #                        = "prebuilt"   the vendor's compiled kernel, dtbs and modules
 #
 # Machines whose own kernel cannot be replaced by the default set
-# AZ0X_KERNEL_PROVIDER ?= "prebuilt" before requiring this file: az01-mpc (its
-# vendor kernel is 6.18, newer than ours) and az0x-signed (signed FIT).
+# AZ0X_KERNEL_PROVIDER ?= "prebuilt" before requiring this file: az01-mpc (our
+# device trees and drivers are untried on it) and az0x-signed (signed FIT).
 #
 # Building our own kernel is possible on the az01 boards because u-boot loads
 # zImage and the dtb FROM THE ROOTFS and calls bootz on a raw image - no FIT,

@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ryan Grenz <info@ryangrenz.com>
 Date: Sat, 10 Oct 2026 18:26:32 +0100
-Subject: [PATCH] nvmem: rockchip: add RK3288 secure-bank word reads
+Subject: [PATCH 14/14] nvmem: rockchip: add RK3288 secure-bank word reads
 
 The inMusic AZ01/AZ05 device trees describe the bank at 0xffb10000 as
 rockchip,rk3288-secure-efuse. Mainline does not match it, so consumers have
@@ -30,7 +30,11 @@ calls. No trusted-firmware implementation or proprietary source is added.
 
 Upstream-Status: Pending [inMusic RK3288 compatible; other boards need validation]
 ---
+ drivers/nvmem/rockchip-efuse.c | 69 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 69 insertions(+)
+
 diff --git a/drivers/nvmem/rockchip-efuse.c b/drivers/nvmem/rockchip-efuse.c
+index 013e67136f3b..a61f8eb10659 100644
 --- a/drivers/nvmem/rockchip-efuse.c
 +++ b/drivers/nvmem/rockchip-efuse.c
 @@ -11,6 +11,7 @@
@@ -41,7 +45,7 @@ diff --git a/drivers/nvmem/rockchip-efuse.c b/drivers/nvmem/rockchip-efuse.c
  #include <linux/nvmem-provider.h>
  #include <linux/slab.h>
  #include <linux/of.h>
-@@ -50,6 +51,8 @@
+@@ -50,6 +51,8 @@ struct rockchip_efuse_chip {
  	struct device *dev;
  	void __iomem *base;
  	struct clk *clk;
@@ -50,7 +54,7 @@ diff --git a/drivers/nvmem/rockchip-efuse.c b/drivers/nvmem/rockchip-efuse.c
  };
  
  static int rockchip_rk3288_efuse_read(void *context, unsigned int offset,
-@@ -92,6 +95,65 @@
+@@ -92,6 +95,65 @@ static int rockchip_rk3288_efuse_read(void *context, unsigned int offset,
  	return 0;
  }
  
@@ -116,26 +120,26 @@ diff --git a/drivers/nvmem/rockchip-efuse.c b/drivers/nvmem/rockchip-efuse.c
  static int rockchip_rk3328_efuse_read(void *context, unsigned int offset,
  				      void *val, size_t bytes)
  {
-@@ -205,6 +267,7 @@
+@@ -205,6 +267,7 @@ static int rockchip_rk3399_efuse_read(void *context, unsigned int offset,
  
  static struct nvmem_config econfig = {
  	.name = "rockchip-efuse",
 +	.id = NVMEM_DEVID_AUTO,
  	.add_legacy_fixed_of_cells = true,
+ 	.type = NVMEM_TYPE_OTP,
  	.stride = 1,
- 	.word_size = 1,
-@@ -234,6 +297,10 @@
+@@ -234,6 +297,10 @@ static const struct of_device_id rockchip_efuse_match[] = {
+ 		.compatible = "rockchip,rk3288-efuse",
  		.data = (void *)&rockchip_rk3288_efuse_read,
  	},
- 	{
++	{
 +		.compatible = "rockchip,rk3288-secure-efuse",
 +		.data = (void *)&rockchip_rk3288_secure_efuse_read,
 +	},
-+	{
+ 	{
  		.compatible = "rockchip,rk3368-efuse",
  		.data = (void *)&rockchip_rk3288_efuse_read,
- 	},
-@@ -276,10 +343,12 @@
+@@ -277,10 +344,12 @@ static int rockchip_efuse_probe(struct platform_device *pdev)
  	if (IS_ERR(efuse->clk))
  		return PTR_ERR(efuse->clk);
  

@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Dylan Corrales <deathcamel58@gmail.com>
 Date: Tue, 6 Oct 2026 11:41:27 -0400
-Subject: [PATCH] drm/panel: add a Himax HX8260 panel driver
+Subject: [PATCH 03/14] drm/panel: add a Himax HX8260 panel driver
 
 Add a driver for the 800x1280 MIPI-DSI panels inMusic builds on a Himax
 controller: the URT UMO-P080MD-T fitted to the Denon DJ SC6000, and the
@@ -37,12 +37,12 @@ Upstream-Status: Inappropriate [vendor board support]
  create mode 100644 drivers/gpu/drm/panel/panel-himax-hx8260.c
 
 diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
-index 3a2f4a9..c529d71 100644
+index 7354dc85a6aa..f392a001e4d7 100644
 --- a/drivers/gpu/drm/panel/Kconfig
 +++ b/drivers/gpu/drm/panel/Kconfig
-@@ -162,6 +162,18 @@ config DRM_PANEL_FEIYANG_FY07024DI26A30D
- 	  Say Y if you want to enable support for panels based on the
- 	  Feiyang FY07024DI26A30-D MIPI-DSI interface.
+@@ -163,6 +163,18 @@ config DRM_PANEL_LVDS
+ 	  handling of power supplies or control signals. It implements automatic
+ 	  backlight handling if the panel is attached to a backlight controller.
  
 +config DRM_PANEL_HIMAX_HX8260
 +	tristate "Himax HX8260 MIPI-DSI panels"
@@ -56,24 +56,24 @@ index 3a2f4a9..c529d71 100644
 +
 +	  If M is selected the module will be called panel-himax-hx8260.
 +
- config DRM_PANEL_HIMAX_HX8394
- 	tristate "HIMAX HX8394 MIPI-DSI LCD panels"
+ config DRM_PANEL_HIMAX_HX8279
+ 	tristate "Himax HX8279-based panels"
  	depends on OF
 diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
-index 433e93d..35667ba 100644
+index 3615a761b44f..2a26b5ab5924 100644
 --- a/drivers/gpu/drm/panel/Makefile
 +++ b/drivers/gpu/drm/panel/Makefile
-@@ -14,6 +14,7 @@ obj-$(CONFIG_DRM_PANEL_EBBG_FT8719) += panel-ebbg-ft8719.o
+@@ -17,6 +17,7 @@ obj-$(CONFIG_DRM_PANEL_EBBG_FT8719) += panel-ebbg-ft8719.o
  obj-$(CONFIG_DRM_PANEL_ELIDA_KD35T133) += panel-elida-kd35t133.o
  obj-$(CONFIG_DRM_PANEL_FEIXIN_K101_IM2BA02) += panel-feixin-k101-im2ba02.o
  obj-$(CONFIG_DRM_PANEL_FEIYANG_FY07024DI26A30D) += panel-feiyang-fy07024di26a30d.o
 +obj-$(CONFIG_DRM_PANEL_HIMAX_HX8260) += panel-himax-hx8260.o
- obj-$(CONFIG_DRM_PANEL_HIMAX_HX8394) += panel-himax-hx8394.o
- obj-$(CONFIG_DRM_PANEL_ILITEK_IL9322) += panel-ilitek-ili9322.o
- obj-$(CONFIG_DRM_PANEL_ILITEK_ILI9341) += panel-ilitek-ili9341.o
+ obj-$(CONFIG_DRM_PANEL_HIMAX_HX8279) += panel-himax-hx8279.o
+ obj-$(CONFIG_DRM_PANEL_HIMAX_HX83102) += panel-himax-hx83102.o
+ obj-$(CONFIG_DRM_PANEL_HIMAX_HX83112A) += panel-himax-hx83112a.o
 diff --git a/drivers/gpu/drm/panel/panel-himax-hx8260.c b/drivers/gpu/drm/panel/panel-himax-hx8260.c
 new file mode 100644
-index 0000000..9b9d1bb
+index 000000000000..9b9d1bb2672b
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-himax-hx8260.c
 @@ -0,0 +1,448 @@
@@ -525,6 +525,3 @@ index 0000000..9b9d1bb
 +
 +MODULE_DESCRIPTION("Himax HX8260 MIPI-DSI panel driver");
 +MODULE_LICENSE("GPL");
--- 
-2.43.0
-

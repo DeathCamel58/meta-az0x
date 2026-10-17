@@ -1,7 +1,7 @@
-From 0a3256fa10a7cd63b7b839487e97671571bcce40 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Dylan Corrales <deathcamel58@gmail.com>
 Date: Tue, 6 Oct 2026 08:59:30 -0400
-Subject: [PATCH] drm/panel: ilitek-ili9881c: Add the inMusic panels
+Subject: [PATCH 09/14] drm/panel: ilitek-ili9881c: Add the inMusic panels
 
 Add the five ILI9881C-based 800x1280 MIPI-DSI panels inMusic fits to its
 AZ01 devices, such as the Denon DJ Prime GO. The vendor's bootloader
@@ -26,14 +26,14 @@ https://gtdisplays.com/Download/DriverIC/Ilitek-ILI9881C%20Datasheet.pdf
 
 Upstream-Status: Pending [new panels for an in-tree driver]
 ---
- drivers/gpu/drm/panel/panel-ilitek-ili9881c.c | 893 ++++++++++++++++++
- 1 file changed, 893 insertions(+)
+ drivers/gpu/drm/panel/panel-ilitek-ili9881c.c | 898 ++++++++++++++++++
+ 1 file changed, 898 insertions(+)
 
 diff --git a/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c b/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
-index bb201f8..15c724a 100644
+index ad4993b2f92a..e068e8a274ad 100644
 --- a/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
 +++ b/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
-@@ -946,6 +946,819 @@ static int ili9881c_unprepare(struct drm_panel *panel)
+@@ -1704,6 +1704,819 @@ static int ili9881c_unprepare(struct drm_panel *panel)
  	return 0;
  }
  
@@ -853,8 +853,8 @@ index bb201f8..15c724a 100644
  static const struct drm_display_mode lhr050h41_default_mode = {
  	.clock		= 62000,
  
-@@ -1014,6 +1827,41 @@ static const struct drm_display_mode w552946aba_default_mode = {
- 	.height_mm	= 121,
+@@ -1806,6 +2619,23 @@ static const struct drm_display_mode am8001280g_default_mode = {
+ 	.height_mm	= 151,
  };
  
 +static const struct drm_display_mode umoh9522md_default_mode = {
@@ -874,6 +874,13 @@ index bb201f8..15c724a 100644
 +	.height_mm	= 151,
 +};
 +
+ static const struct drm_display_mode rpi_7inch_default_mode = {
+ 	.clock          = 83330,
+ 
+@@ -1840,6 +2670,24 @@ static const struct drm_display_mode bsd1218_a101kl68_default_mode = {
+ 	.height_mm	= 170,
+ };
+ 
 +/*
 + * The timing the bootloader gives every inMusic ILI9881C panel. The
 + * physical size is only known for the URT UMOH-9522MD-T.
@@ -895,8 +902,8 @@ index bb201f8..15c724a 100644
  static int ili9881c_get_modes(struct drm_panel *panel,
  			      struct drm_connector *connector)
  {
-@@ -1145,11 +1993,56 @@ static const struct ili9881c_desc w552946aba_desc = {
- 		      MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_NO_EOT_PACKET,
+@@ -2017,15 +2865,65 @@ static const struct ili9881c_desc bsd1218_a101kl68_desc = {
+ 	.lanes = 4,
  };
  
 +static const struct ili9881c_desc umoh9522md_desc = {
@@ -905,6 +912,7 @@ index bb201f8..15c724a 100644
 +	.mode = &umoh9522md_default_mode,
 +	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 +		      MIPI_DSI_MODE_LPM,
++	.lanes = 4,
 +};
 +
 +static const struct ili9881c_desc gvh070hd98h_desc = {
@@ -913,6 +921,7 @@ index bb201f8..15c724a 100644
 +	.mode = &inmusic_800x1280_mode,
 +	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 +		      MIPI_DSI_MODE_LPM,
++	.lanes = 4,
 +};
 +
 +static const struct ili9881c_desc gvh101hd161h_desc = {
@@ -921,6 +930,7 @@ index bb201f8..15c724a 100644
 +	.mode = &inmusic_800x1280_mode,
 +	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 +		      MIPI_DSI_MODE_LPM,
++	.lanes = 4,
 +};
 +
 +static const struct ili9881c_desc mfc070ac_desc = {
@@ -929,6 +939,7 @@ index bb201f8..15c724a 100644
 +	.mode = &inmusic_800x1280_mode,
 +	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 +		      MIPI_DSI_MODE_LPM,
++	.lanes = 4,
 +};
 +
 +static const struct ili9881c_desc mfc101gc_desc = {
@@ -937,21 +948,23 @@ index bb201f8..15c724a 100644
 +	.mode = &inmusic_800x1280_mode,
 +	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
 +		      MIPI_DSI_MODE_LPM,
++	.lanes = 4,
 +};
 +
  static const struct of_device_id ili9881c_of_match[] = {
  	{ .compatible = "bananapi,lhr050h41", .data = &lhr050h41_desc },
+ 	{ .compatible = "bestar,bsd1218-a101kl68", .data = &bsd1218_a101kl68_desc },
  	{ .compatible = "feixin,k101-im2byl02", .data = &k101_im2byl02_desc },
+ 	{ .compatible = "startek,kd050hdfia020", .data = &kd050hdfia020_desc },
 +	{ .compatible = "goldenvision,gvh070hd98h-c-a", .data = &gvh070hd98h_desc },
 +	{ .compatible = "goldenvision,gvh101hd161h-c-a", .data = &gvh101hd161h_desc },
  	{ .compatible = "tdo,tl050hdv35", .data = &tl050hdv35_desc },
 +	{ .compatible = "urt,umoh-9522md-t", .data = &umoh9522md_desc },
  	{ .compatible = "wanchanglong,w552946aba", .data = &w552946aba_desc },
+ 	{ .compatible = "ampire,am8001280g", .data = &am8001280g_desc },
+ 	{ .compatible = "raspberrypi,dsi-7inch", &rpi_7inch_desc },
 +	{ .compatible = "wayton,mfc070ac-ihd3", .data = &mfc070ac_desc },
 +	{ .compatible = "wayton,mfc101gc-ihd3-1", .data = &mfc101gc_desc },
  	{ }
  };
  MODULE_DEVICE_TABLE(of, ili9881c_of_match);
--- 
-2.43.0
-

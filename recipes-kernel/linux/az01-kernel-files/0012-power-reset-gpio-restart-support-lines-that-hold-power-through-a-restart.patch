@@ -1,7 +1,7 @@
-From 6d67ed245dd87f14b4fb44122540006454998908 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Dylan Corrales <deathcamel58@gmail.com>
 Date: Fri, 9 Oct 2026 12:53:07 -0400
-Subject: [PATCH 12/13] power: reset: gpio-restart: support lines that hold
+Subject: [PATCH 12/14] power: reset: gpio-restart: support lines that hold
  power through a restart
 
 Some boards drive a GPIO before restarting not to reset the system but
@@ -59,18 +59,18 @@ index 53535de0d41c..a16a90f9fa88 100644
      default: 129
  
 diff --git a/drivers/power/reset/gpio-restart.c b/drivers/power/reset/gpio-restart.c
-index 3aa19765772d..698106045eff 100644
+index d1e177176fa1..af6d00cffb25 100644
 --- a/drivers/power/reset/gpio-restart.c
 +++ b/drivers/power/reset/gpio-restart.c
-@@ -21,6 +21,7 @@ struct gpio_restart {
+@@ -20,6 +20,7 @@ struct gpio_restart {
  	u32 active_delay_ms;
  	u32 inactive_delay_ms;
  	u32 wait_delay_ms;
 +	bool power_hold;
  };
  
- static int gpio_restart_notify(struct notifier_block *this,
-@@ -43,7 +44,12 @@ static int gpio_restart_notify(struct notifier_block *this,
+ static int gpio_restart_notify(struct sys_off_data *data)
+@@ -40,7 +41,12 @@ static int gpio_restart_notify(struct sys_off_data *data)
  	/* give it some time */
  	mdelay(gpio_restart->wait_delay_ms);
  
@@ -84,12 +84,12 @@ index 3aa19765772d..698106045eff 100644
  
  	return NOTIFY_DONE;
  }
-@@ -92,6 +98,8 @@ static int gpio_restart_probe(struct platform_device *pdev)
+@@ -88,6 +94,8 @@ static int gpio_restart_probe(struct platform_device *pdev)
  			&gpio_restart->inactive_delay_ms);
  	of_property_read_u32(pdev->dev.of_node, "wait-delay",
  			&gpio_restart->wait_delay_ms);
 +	gpio_restart->power_hold = of_property_read_bool(pdev->dev.of_node,
 +			"power-hold");
  
- 	platform_set_drvdata(pdev, gpio_restart);
- 
+ 	ret = devm_register_sys_off_handler(&pdev->dev,
+ 					    SYS_OFF_MODE_RESTART,

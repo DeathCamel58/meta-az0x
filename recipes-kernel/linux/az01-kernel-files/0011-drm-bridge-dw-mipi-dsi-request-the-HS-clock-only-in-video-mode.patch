@@ -1,7 +1,7 @@
-From 7fb7f792391c492cb87d5632cc9bfb88b5d83a71 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Ryan Grenz <info@ryangrenz.com>
 Date: Tue, 6 Oct 2026 23:26:36 +0100
-Subject: [PATCH] drm/bridge: dw-mipi-dsi: request the HS clock only in
+Subject: [PATCH 11/14] drm/bridge: dw-mipi-dsi: request the HS clock only in
  video mode
 
 dw_mipi_dsi_set_mode() requests the continuous high-speed clock in
@@ -28,10 +28,10 @@ Upstream-Status: Inappropriate [not yet tested beyond the Prime 4+; mainline sti
  1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c b/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c
-index 04d4a1a10698..70706a91af88 100644
+index 8fc2e282ff11..a77ade14141f 100644
 --- a/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c
 +++ b/drivers/gpu/drm/bridge/synopsys/dw-mipi-dsi.c
-@@ -582,9 +582,12 @@ static void dw_mipi_dsi_set_mode(struct dw_mipi_dsi *dsi,
+@@ -639,9 +639,12 @@ static void dw_mipi_dsi_set_mode(struct dw_mipi_dsi *dsi,
  		dsi_write(dsi, DSI_MODE_CFG, ENABLE_CMD_MODE);
  	}
  
@@ -47,6 +47,3 @@ index 04d4a1a10698..70706a91af88 100644
  	dsi_write(dsi, DSI_LPCLK_CTRL, val);
  
  	dsi_write(dsi, DSI_PWR_UP, POWERUP);
--- 
-2.43.0
-

@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: az0x <dev@localhost>
 Date: Fri, 18 Sep 2026 12:23:52 -0400
-Subject: [PATCH 5/6] ASoC: rockchip: add the inMusic AZ0x machine driver
+Subject: [PATCH] ASoC: rockchip: add the inMusic AZ0x machine driver
 
 Wires the RK3288 I2S controller to the board DAC on inMusic AZ0x boards.
 
@@ -30,36 +30,37 @@ Upstream-Status: Inappropriate [vendor board support]
  create mode 100644 sound/soc/rockchip/rockchip_az0x.c
 
 diff --git a/sound/soc/rockchip/Kconfig b/sound/soc/rockchip/Kconfig
-index f98a2fa85edd..ad545b67d090 100644
+index bd210fafe9fe..07ca641696b2 100644
 --- a/sound/soc/rockchip/Kconfig
 +++ b/sound/soc/rockchip/Kconfig
-@@ -90,3 +90,13 @@ config SND_SOC_RK3399_GRU_SOUND
- 	help
+@@ -92,4 +92,14 @@ config SND_SOC_RK3399_GRU_SOUND
  	  Say Y or M here if you want to add support multiple codecs for SoC
  	  audio on Rockchip RK3399 GRU boards.
-+
+ 
 +config SND_SOC_ROCKCHIP_AZ0X
 +	tristate "ASoC support for inMusic AZ0x boards"
-+	depends on SND_SOC_ROCKCHIP && GPIOLIB
++	depends on GPIOLIB
 +	select SND_SOC_ROCKCHIP_I2S
 +	select SND_SOC_AZ0X_AUDIO_CODEC
 +	help
 +	  Say Y or M here if you want to add support for SoC audio on inMusic
 +	  AZ0x boards (Denon DJ, Numark, Rane, Akai on RK3288), which pair the
 +	  Rockchip I2S controller with a control-interface-less DAC.
++
+ endmenu
 diff --git a/sound/soc/rockchip/Makefile b/sound/soc/rockchip/Makefile
-index 30c57c0d7660..586c03d7b0ec 100644
+index af6dc1165347..0acda542a91c 100644
 --- a/sound/soc/rockchip/Makefile
 +++ b/sound/soc/rockchip/Makefile
-@@ -10,11 +10,13 @@ obj-$(CONFIG_SND_SOC_ROCKCHIP_PDM) += snd-soc-rockchip-pdm.o
+@@ -12,11 +12,13 @@ obj-$(CONFIG_SND_SOC_ROCKCHIP_SAI) += snd-soc-rockchip-sai.o
  obj-$(CONFIG_SND_SOC_ROCKCHIP_SPDIF) += snd-soc-rockchip-spdif.o
  obj-$(CONFIG_SND_SOC_ROCKCHIP_I2S_TDM) += snd-soc-rockchip-i2s-tdm.o
  
-+snd-soc-rockchip-az0x-objs := rockchip_az0x.o
- snd-soc-rockchip-max98090-objs := rockchip_max98090.o
- snd-soc-rockchip-rt5645-objs := rockchip_rt5645.o
- snd-soc-rk3288-hdmi-analog-objs := rk3288_hdmi_analog.o
- snd-soc-rk3399-gru-sound-objs := rk3399_gru_sound.o
++snd-soc-rockchip-az0x-y := rockchip_az0x.o
+ snd-soc-rockchip-max98090-y := rockchip_max98090.o
+ snd-soc-rockchip-rt5645-y := rockchip_rt5645.o
+ snd-soc-rk3288-hdmi-analog-y := rk3288_hdmi_analog.o
+ snd-soc-rk3399-gru-sound-y := rk3399_gru_sound.o
  
 +obj-$(CONFIG_SND_SOC_ROCKCHIP_AZ0X) += snd-soc-rockchip-az0x.o
  obj-$(CONFIG_SND_SOC_ROCKCHIP_MAX98090) += snd-soc-rockchip-max98090.o

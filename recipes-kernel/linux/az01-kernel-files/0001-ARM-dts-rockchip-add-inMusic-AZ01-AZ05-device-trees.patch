@@ -1,7 +1,7 @@
-From 810c83f46c7b2069bd9f205753444084544f1df5 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: az0x <dev@localhost>
 Date: Thu, 17 Sep 2026 18:38:36 -0400
-Subject: [PATCH] ARM: dts: rockchip: add inMusic AZ01/AZ05 device trees
+Subject: [PATCH 01/14] ARM: dts: rockchip: add inMusic AZ01/AZ05 device trees
 
 Device trees for inMusic's AZ01 and AZ05 boards (RK3288), covering the four
 machines meta-az0x supports -- jp11 (Denon DJ Prime GO), jp13, jc11 and acva
@@ -306,10 +306,10 @@ binaries rather than authored upstream.
  create mode 100644 arch/arm/boot/dts/rockchip/rk3288-az05.dtsi
 
 diff --git a/arch/arm/boot/dts/rockchip/Makefile b/arch/arm/boot/dts/rockchip/Makefile
-index 0f46e18..65bbe79 100644
+index 716f5540e438..e2d9e33b207d 100644
 --- a/arch/arm/boot/dts/rockchip/Makefile
 +++ b/arch/arm/boot/dts/rockchip/Makefile
-@@ -27,6 +27,55 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += \
+@@ -31,6 +31,55 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += \
  	rk3288-r89.dtb \
  	rk3288-rock2-square.dtb \
  	rk3288-rock-pi-n8.dtb \
@@ -367,7 +367,7 @@ index 0f46e18..65bbe79 100644
  	rk3288-veyron-brain.dtb \
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acv5s-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-acv5s-base.dtsi
 new file mode 100644
-index 0000000..e55a950
+index 000000000000..e55a9508d896
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acv5s-base.dtsi
 @@ -0,0 +1,1102 @@
@@ -1475,7 +1475,7 @@ index 0000000..e55a950
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acv5s.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-acv5s.dts
 new file mode 100644
-index 0000000..d567dd2
+index 000000000000..d567dd22ebce
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acv5s.dts
 @@ -0,0 +1,13 @@
@@ -1494,7 +1494,7 @@ index 0000000..d567dd2
 +#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi
 new file mode 100644
-index 0000000..7dd4f6f
+index 000000000000..7dd4f6f5b958
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acva-base.dtsi
 @@ -0,0 +1,1086 @@
@@ -2586,7 +2586,7 @@ index 0000000..7dd4f6f
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acva-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-acva-c.dts
 new file mode 100644
-index 0000000..5151ed0
+index 000000000000..5151ed0b1add
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acva-c.dts
 @@ -0,0 +1,29 @@
@@ -2621,7 +2621,7 @@ index 0000000..5151ed0
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acva.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-acva.dts
 new file mode 100644
-index 0000000..69d5d5e
+index 000000000000..69d5d5e0d928
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acva.dts
 @@ -0,0 +1,10 @@
@@ -2637,7 +2637,7 @@ index 0000000..69d5d5e
 +#include "rk3288-az01-sound-codec-pins.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acvb-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-acvb-base.dtsi
 new file mode 100644
-index 0000000..21a52c1
+index 000000000000..21a52c1db2d5
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvb-base.dtsi
 @@ -0,0 +1,1128 @@
@@ -3771,7 +3771,7 @@ index 0000000..21a52c1
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acvb-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-acvb-c.dts
 new file mode 100644
-index 0000000..8bf3fdd
+index 000000000000..8bf3fdd4804b
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvb-c.dts
 @@ -0,0 +1,31 @@
@@ -3808,7 +3808,7 @@ index 0000000..8bf3fdd
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acvb.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-acvb.dts
 new file mode 100644
-index 0000000..8482594
+index 000000000000..84825949edd4
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvb.dts
 @@ -0,0 +1,12 @@
@@ -3826,7 +3826,7 @@ index 0000000..8482594
 +#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-base.dtsi
 new file mode 100644
-index 0000000..774455e
+index 000000000000..774455eacb41
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-base.dtsi
 @@ -0,0 +1,1140 @@
@@ -4972,7 +4972,7 @@ index 0000000..774455e
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-c.dts
 new file mode 100644
-index 0000000..747765d
+index 000000000000..747765dbdfed
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvm-c.dts
 @@ -0,0 +1,32 @@
@@ -5010,7 +5010,7 @@ index 0000000..747765d
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-acvm.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-acvm.dts
 new file mode 100644
-index 0000000..c6f5342
+index 000000000000..c6f53428e071
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-acvm.dts
 @@ -0,0 +1,13 @@
@@ -5029,7 +5029,7 @@ index 0000000..c6f5342
 +#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-fan-pwm.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-fan-pwm.dtsi
 new file mode 100644
-index 0000000..69979ad
+index 000000000000..69979ad2017f
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-fan-pwm.dtsi
 @@ -0,0 +1,140 @@
@@ -5175,7 +5175,7 @@ index 0000000..69979ad
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-base.dtsi
 new file mode 100644
-index 0000000..9830071
+index 000000000000..9830071ddf83
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-base.dtsi
 @@ -0,0 +1,1066 @@
@@ -6247,7 +6247,7 @@ index 0000000..9830071
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-c-revf.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-c-revf.dts
 new file mode 100644
-index 0000000..070c064
+index 000000000000..070c064ae1cf
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-c-revf.dts
 @@ -0,0 +1,24 @@
@@ -6277,7 +6277,7 @@ index 0000000..070c064
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-c.dts
 new file mode 100644
-index 0000000..9e32b7a
+index 000000000000..9e32b7a29f1a
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-c.dts
 @@ -0,0 +1,24 @@
@@ -6307,7 +6307,7 @@ index 0000000..9e32b7a
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-revf-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-revf-base.dtsi
 new file mode 100644
-index 0000000..500aa9e
+index 000000000000..500aa9e0ebcf
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-revf-base.dtsi
 @@ -0,0 +1,1066 @@
@@ -7379,7 +7379,7 @@ index 0000000..500aa9e
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-revf.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-revf.dts
 new file mode 100644
-index 0000000..6d5667d
+index 000000000000..6d5667d50124
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02-revf.dts
 @@ -0,0 +1,11 @@
@@ -7396,7 +7396,7 @@ index 0000000..6d5667d
 +#include "rk3288-az01-sound-codec-pins.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg02.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02.dts
 new file mode 100644
-index 0000000..d64c20e
+index 000000000000..d64c20e967b1
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg02.dts
 @@ -0,0 +1,11 @@
@@ -7413,7 +7413,7 @@ index 0000000..d64c20e
 +#include "rk3288-az01-sound-codec-pins.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg03-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-hg03-base.dtsi
 new file mode 100644
-index 0000000..b7c8318
+index 000000000000..b7c8318be3b9
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg03-base.dtsi
 @@ -0,0 +1,1121 @@
@@ -8540,7 +8540,7 @@ index 0000000..b7c8318
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg03-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-hg03-c.dts
 new file mode 100644
-index 0000000..3ead4a4
+index 000000000000..3ead4a48a896
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg03-c.dts
 @@ -0,0 +1,23 @@
@@ -8569,7 +8569,7 @@ index 0000000..3ead4a4
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-hg03.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-hg03.dts
 new file mode 100644
-index 0000000..86f0caf
+index 000000000000..86f0cafed1ab
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-hg03.dts
 @@ -0,0 +1,10 @@
@@ -8585,7 +8585,7 @@ index 0000000..86f0caf
 +#include "rk3288-az01-sound-codec-pins.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc11-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11-base.dtsi
 new file mode 100644
-index 0000000..5d72b8d
+index 000000000000..5d72b8dae9d0
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11-base.dtsi
 @@ -0,0 +1,1085 @@
@@ -9676,7 +9676,7 @@ index 0000000..5d72b8d
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc11-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11-c.dts
 new file mode 100644
-index 0000000..2382a47
+index 000000000000..2382a47b015e
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11-c.dts
 @@ -0,0 +1,33 @@
@@ -9715,7 +9715,7 @@ index 0000000..2382a47
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc11.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11.dts
 new file mode 100644
-index 0000000..549d234
+index 000000000000..549d234c16bf
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11.dts
 @@ -0,0 +1,15 @@
@@ -9736,7 +9736,7 @@ index 0000000..549d234
 +#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s-base.dtsi
 new file mode 100644
-index 0000000..7ad2d06
+index 000000000000..7ad2d06b2df3
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s-base.dtsi
 @@ -0,0 +1,1063 @@
@@ -10805,7 +10805,7 @@ index 0000000..7ad2d06
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s.dts
 new file mode 100644
-index 0000000..ff77bfd
+index 000000000000..ff77bfd14cfa
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc11s.dts
 @@ -0,0 +1,42 @@
@@ -10853,7 +10853,7 @@ index 0000000..ff77bfd
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi
 new file mode 100644
-index 0000000..84f618c
+index 000000000000..84f618c30193
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-base.dtsi
 @@ -0,0 +1,1129 @@
@@ -11988,7 +11988,7 @@ index 0000000..84f618c
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-c.dts
 new file mode 100644
-index 0000000..c6b1a51
+index 000000000000..c6b1a51d3e81
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16-c.dts
 @@ -0,0 +1,33 @@
@@ -12027,7 +12027,7 @@ index 0000000..c6b1a51
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jc16.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16.dts
 new file mode 100644
-index 0000000..13bbf72
+index 000000000000..13bbf720454a
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jc16.dts
 @@ -0,0 +1,15 @@
@@ -12048,7 +12048,7 @@ index 0000000..13bbf72
 +#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-base.dtsi
 new file mode 100644
-index 0000000..1254db2
+index 000000000000..1254db20cedb
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-base.dtsi
 @@ -0,0 +1,1137 @@
@@ -13191,7 +13191,7 @@ index 0000000..1254db2
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-c.dts
 new file mode 100644
-index 0000000..acb8927
+index 000000000000..acb89270dd6c
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp07-c.dts
 @@ -0,0 +1,32 @@
@@ -13229,7 +13229,7 @@ index 0000000..acb8927
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp07.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp07.dts
 new file mode 100644
-index 0000000..9608f5d
+index 000000000000..9608f5da6928
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp07.dts
 @@ -0,0 +1,13 @@
@@ -13248,7 +13248,7 @@ index 0000000..9608f5d
 +#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-base.dtsi
 new file mode 100644
-index 0000000..3ebc764
+index 000000000000..3ebc764e626d
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-base.dtsi
 @@ -0,0 +1,1137 @@
@@ -14391,7 +14391,7 @@ index 0000000..3ebc764
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-c-revf.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-c-revf.dts
 new file mode 100644
-index 0000000..5f6985e
+index 000000000000..5f6985e29045
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-c-revf.dts
 @@ -0,0 +1,34 @@
@@ -14431,7 +14431,7 @@ index 0000000..5f6985e
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-c.dts
 new file mode 100644
-index 0000000..b470391
+index 000000000000..b470391301d9
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-c.dts
 @@ -0,0 +1,34 @@
@@ -14471,7 +14471,7 @@ index 0000000..b470391
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf-base.dtsi
 new file mode 100644
-index 0000000..0b25ecd
+index 000000000000..0b25ecd7b117
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf-base.dtsi
 @@ -0,0 +1,1138 @@
@@ -15615,7 +15615,7 @@ index 0000000..0b25ecd
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf.dts
 new file mode 100644
-index 0000000..1222a0d
+index 000000000000..1222a0da256b
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08-revf.dts
 @@ -0,0 +1,15 @@
@@ -15636,7 +15636,7 @@ index 0000000..1222a0d
 +#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp08.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08.dts
 new file mode 100644
-index 0000000..baf538a
+index 000000000000..baf538a5d8cd
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp08.dts
 @@ -0,0 +1,15 @@
@@ -15657,7 +15657,7 @@ index 0000000..baf538a
 +#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-base.dtsi
 new file mode 100644
-index 0000000..571ed03
+index 000000000000..571ed039acac
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-base.dtsi
 @@ -0,0 +1,1089 @@
@@ -16752,7 +16752,7 @@ index 0000000..571ed03
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-c.dts
 new file mode 100644
-index 0000000..00939f8
+index 000000000000..00939f822803
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-c.dts
 @@ -0,0 +1,28 @@
@@ -16786,7 +16786,7 @@ index 0000000..00939f8
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-fitted.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-fitted.dtsi
 new file mode 100644
-index 0000000..29124d8
+index 000000000000..29124d8b8c25
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11-fitted.dtsi
 @@ -0,0 +1,75 @@
@@ -16867,7 +16867,7 @@ index 0000000..29124d8
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp11.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11.dts
 new file mode 100644
-index 0000000..b2b5547
+index 000000000000..b2b5547d3ca6
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp11.dts
 @@ -0,0 +1,12 @@
@@ -16885,7 +16885,7 @@ index 0000000..b2b5547
 +#include "rk3288-az01-jp11-fitted.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-base.dtsi
 new file mode 100644
-index 0000000..ee0cfa6
+index 000000000000..ee0cfa6671c8
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-base.dtsi
 @@ -0,0 +1,1111 @@
@@ -18002,7 +18002,7 @@ index 0000000..ee0cfa6
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-c.dts
 new file mode 100644
-index 0000000..7d5a400
+index 000000000000..7d5a400f1628
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13-c.dts
 @@ -0,0 +1,33 @@
@@ -18041,7 +18041,7 @@ index 0000000..7d5a400
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp13.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13.dts
 new file mode 100644
-index 0000000..347256a
+index 000000000000..347256a52a67
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp13.dts
 @@ -0,0 +1,38 @@
@@ -18085,7 +18085,7 @@ index 0000000..347256a
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-base.dtsi
 new file mode 100644
-index 0000000..e15307f
+index 000000000000..e15307f99a48
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-base.dtsi
 @@ -0,0 +1,1111 @@
@@ -19202,7 +19202,7 @@ index 0000000..e15307f
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-c.dts
 new file mode 100644
-index 0000000..3a0df9f
+index 000000000000..3a0df9f0be93
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp14-c.dts
 @@ -0,0 +1,35 @@
@@ -19243,7 +19243,7 @@ index 0000000..3a0df9f
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-jp14.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-jp14.dts
 new file mode 100644
-index 0000000..8bbef49
+index 000000000000..8bbef49b2d30
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-jp14.dts
 @@ -0,0 +1,16 @@
@@ -19265,7 +19265,7 @@ index 0000000..8bbef49
 +#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mg01-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-mg01-base.dtsi
 new file mode 100644
-index 0000000..98435e0
+index 000000000000..98435e0f3066
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mg01-base.dtsi
 @@ -0,0 +1,1156 @@
@@ -20427,7 +20427,7 @@ index 0000000..98435e0
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mg01.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-mg01.dts
 new file mode 100644
-index 0000000..7c6b160
+index 000000000000..7c6b16066bed
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mg01.dts
 @@ -0,0 +1,12 @@
@@ -20445,7 +20445,7 @@ index 0000000..7c6b160
 +#include "rk3288-az01-sound-codec-pins.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-base.dtsi
 new file mode 100644
-index 0000000..0b8fd78
+index 000000000000..0b8fd7866c79
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-base.dtsi
 @@ -0,0 +1,1101 @@
@@ -21552,7 +21552,7 @@ index 0000000..0b8fd78
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-c.dts
 new file mode 100644
-index 0000000..56f8667
+index 000000000000..56f8667f28e6
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5-c.dts
 @@ -0,0 +1,32 @@
@@ -21590,7 +21590,7 @@ index 0000000..56f8667
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5.dts
 new file mode 100644
-index 0000000..c8ac475
+index 000000000000..c8ac4755ff83
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv5.dts
 @@ -0,0 +1,13 @@
@@ -21609,7 +21609,7 @@ index 0000000..c8ac475
 +#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-base.dtsi
 new file mode 100644
-index 0000000..611fb05
+index 000000000000..611fb05b5514
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-base.dtsi
 @@ -0,0 +1,1128 @@
@@ -22743,7 +22743,7 @@ index 0000000..611fb05
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-c.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-c.dts
 new file mode 100644
-index 0000000..65a69df
+index 000000000000..65a69df84528
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8-c.dts
 @@ -0,0 +1,31 @@
@@ -22780,7 +22780,7 @@ index 0000000..65a69df
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8.dts b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8.dts
 new file mode 100644
-index 0000000..2cafb35
+index 000000000000..2cafb35f7ecd
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-mpc-acv8.dts
 @@ -0,0 +1,12 @@
@@ -22798,7 +22798,7 @@ index 0000000..2cafb35
 +#include "rk3288-az01-usb-hub.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opp-1704.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opp-1704.dtsi
 new file mode 100644
-index 0000000..c99a554
+index 000000000000..c99a554d0ffe
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opp-1704.dtsi
 @@ -0,0 +1,16 @@
@@ -22820,7 +22820,7 @@ index 0000000..c99a554
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-2.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-2.dtsi
 new file mode 100644
-index 0000000..0e860d3
+index 000000000000..0e860d3faa81
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-2.dtsi
 @@ -0,0 +1,32 @@
@@ -22858,7 +22858,7 @@ index 0000000..0e860d3
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-3.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-3.dtsi
 new file mode 100644
-index 0000000..4a21a06
+index 000000000000..4a21a06f2b70
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-3.dtsi
 @@ -0,0 +1,41 @@
@@ -22905,7 +22905,7 @@ index 0000000..4a21a06
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-4.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-4.dtsi
 new file mode 100644
-index 0000000..819e758
+index 000000000000..819e75815b71
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-4.dtsi
 @@ -0,0 +1,38 @@
@@ -22949,7 +22949,7 @@ index 0000000..819e758
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-5.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-5.dtsi
 new file mode 100644
-index 0000000..cb7431f
+index 000000000000..cb7431f567ee
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-5.dtsi
 @@ -0,0 +1,34 @@
@@ -22989,7 +22989,7 @@ index 0000000..cb7431f
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-6.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-6.dtsi
 new file mode 100644
-index 0000000..2ac1c45
+index 000000000000..2ac1c45271fb
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s-6.dtsi
 @@ -0,0 +1,27 @@
@@ -23022,7 +23022,7 @@ index 0000000..2ac1c45
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s.dtsi
 new file mode 100644
-index 0000000..b03f287
+index 000000000000..b03f287a065d
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acv5s.dtsi
 @@ -0,0 +1,250 @@
@@ -23278,7 +23278,7 @@ index 0000000..b03f287
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acva.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acva.dtsi
 new file mode 100644
-index 0000000..248c601
+index 000000000000..248c601c4ce3
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-acva.dtsi
 @@ -0,0 +1,25 @@
@@ -23309,7 +23309,7 @@ index 0000000..248c601
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-2.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-2.dtsi
 new file mode 100644
-index 0000000..1cff89f
+index 000000000000..1cff89fc0881
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-2.dtsi
 @@ -0,0 +1,26 @@
@@ -23341,7 +23341,7 @@ index 0000000..1cff89f
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-3.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-3.dtsi
 new file mode 100644
-index 0000000..d9519db
+index 000000000000..d9519dbddea3
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-3.dtsi
 @@ -0,0 +1,48 @@
@@ -23395,7 +23395,7 @@ index 0000000..d9519db
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-4.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-4.dtsi
 new file mode 100644
-index 0000000..e9dcab4
+index 000000000000..e9dcab4815c9
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-4.dtsi
 @@ -0,0 +1,23 @@
@@ -23424,7 +23424,7 @@ index 0000000..e9dcab4
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-c.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-c.dtsi
 new file mode 100644
-index 0000000..3592118
+index 000000000000..3592118f91cd
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02-c.dtsi
 @@ -0,0 +1,20 @@
@@ -23450,7 +23450,7 @@ index 0000000..3592118
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02.dtsi
 new file mode 100644
-index 0000000..af14f2a
+index 000000000000..af14f2ac12b9
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg02.dtsi
 @@ -0,0 +1,189 @@
@@ -23645,7 +23645,7 @@ index 0000000..af14f2a
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg03.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg03.dtsi
 new file mode 100644
-index 0000000..0bc5463
+index 000000000000..0bc546399fef
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-hg03.dtsi
 @@ -0,0 +1,64 @@
@@ -23715,7 +23715,7 @@ index 0000000..0bc5463
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-jc11.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-jc11.dtsi
 new file mode 100644
-index 0000000..a10a365
+index 000000000000..a10a365a827a
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-jc11.dtsi
 @@ -0,0 +1,20 @@
@@ -23741,7 +23741,7 @@ index 0000000..a10a365
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-opt-jp08.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-jp08.dtsi
 new file mode 100644
-index 0000000..fdd1e0b
+index 000000000000..fdd1e0bd22ad
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-opt-jp08.dtsi
 @@ -0,0 +1,138 @@
@@ -23885,7 +23885,7 @@ index 0000000..fdd1e0b
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-regulators-acv.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-regulators-acv.dtsi
 new file mode 100644
-index 0000000..f47bfa4
+index 000000000000..f47bfa4d2920
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-regulators-acv.dtsi
 @@ -0,0 +1,26 @@
@@ -23917,7 +23917,7 @@ index 0000000..f47bfa4
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-regulators-jp.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-regulators-jp.dtsi
 new file mode 100644
-index 0000000..dad2aac
+index 000000000000..dad2aac1e5c1
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-regulators-jp.dtsi
 @@ -0,0 +1,26 @@
@@ -23949,7 +23949,7 @@ index 0000000..dad2aac
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-sound-codec-pins.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-sound-codec-pins.dtsi
 new file mode 100644
-index 0000000..c2785f7
+index 000000000000..c2785f7c7c11
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-sound-codec-pins.dtsi
 @@ -0,0 +1,23 @@
@@ -23978,7 +23978,7 @@ index 0000000..c2785f7
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-touch-ili2110.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-touch-ili2110.dtsi
 new file mode 100644
-index 0000000..2f883cd
+index 000000000000..2f883cd241ec
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-touch-ili2110.dtsi
 @@ -0,0 +1,47 @@
@@ -24031,7 +24031,7 @@ index 0000000..2f883cd
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01-usb-hub.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01-usb-hub.dtsi
 new file mode 100644
-index 0000000..186f8b5
+index 000000000000..186f8b5c98f3
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01-usb-hub.dtsi
 @@ -0,0 +1,73 @@
@@ -24110,7 +24110,7 @@ index 0000000..186f8b5
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az01.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az01.dtsi
 new file mode 100644
-index 0000000..f22960c
+index 000000000000..f22960c2c11d
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az01.dtsi
 @@ -0,0 +1,975 @@
@@ -25091,7 +25091,7 @@ index 0000000..f22960c
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-acva2-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-acva2-base.dtsi
 new file mode 100644
-index 0000000..d92a8d1
+index 000000000000..d92a8d1b7bf4
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-acva2-base.dtsi
 @@ -0,0 +1,749 @@
@@ -25846,7 +25846,7 @@ index 0000000..d92a8d1
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-acva2.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-acva2.dts
 new file mode 100644
-index 0000000..a5bea76
+index 000000000000..a5bea763d7db
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-acva2.dts
 @@ -0,0 +1,8 @@
@@ -25860,7 +25860,7 @@ index 0000000..a5bea76
 +#include "rk3288-az05-touch-ili2116.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-acvm-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-acvm-base.dtsi
 new file mode 100644
-index 0000000..4e303dc
+index 000000000000..4e303dc82b80
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-acvm-base.dtsi
 @@ -0,0 +1,781 @@
@@ -26647,7 +26647,7 @@ index 0000000..4e303dc
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-acvm.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-acvm.dts
 new file mode 100644
-index 0000000..7c6ccdc
+index 000000000000..7c6ccdc65a23
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-acvm.dts
 @@ -0,0 +1,8 @@
@@ -26661,7 +26661,7 @@ index 0000000..7c6ccdc
 +#include "rk3288-az05-touch-ili2116.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-acvr-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-acvr-base.dtsi
 new file mode 100644
-index 0000000..0726d42
+index 000000000000..0726d42e3867
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-acvr-base.dtsi
 @@ -0,0 +1,749 @@
@@ -27416,7 +27416,7 @@ index 0000000..0726d42
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-acvr.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-acvr.dts
 new file mode 100644
-index 0000000..46d052c
+index 000000000000..46d052c93a3d
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-acvr.dts
 @@ -0,0 +1,7 @@
@@ -27429,7 +27429,7 @@ index 0000000..46d052c
 +#include "rk3288-az05-touch-ili2116.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-hg04-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-hg04-base.dtsi
 new file mode 100644
-index 0000000..c413055
+index 000000000000..c4130551181a
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-hg04-base.dtsi
 @@ -0,0 +1,975 @@
@@ -28410,7 +28410,7 @@ index 0000000..c413055
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-hg04.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-hg04.dts
 new file mode 100644
-index 0000000..ecc685e
+index 000000000000..ecc685e85f0c
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-hg04.dts
 @@ -0,0 +1,5 @@
@@ -28421,7 +28421,7 @@ index 0000000..ecc685e
 +#include "rk3288-az05-opt-hg04.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-hg06-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-hg06-base.dtsi
 new file mode 100644
-index 0000000..98096c7
+index 000000000000..98096c76b212
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-hg06-base.dtsi
 @@ -0,0 +1,730 @@
@@ -29157,7 +29157,7 @@ index 0000000..98096c7
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-hg06.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-hg06.dts
 new file mode 100644
-index 0000000..cc19715
+index 000000000000..cc197159d22a
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-hg06.dts
 @@ -0,0 +1,8 @@
@@ -29171,7 +29171,7 @@ index 0000000..cc19715
 +#include "rk3288-az05-touch-ili2116.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-hv01-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-hv01-base.dtsi
 new file mode 100644
-index 0000000..87ac7b6
+index 000000000000..87ac7b672b73
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-hv01-base.dtsi
 @@ -0,0 +1,730 @@
@@ -29907,7 +29907,7 @@ index 0000000..87ac7b6
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-hv01.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-hv01.dts
 new file mode 100644
-index 0000000..7707c77
+index 000000000000..7707c77075a2
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-hv01.dts
 @@ -0,0 +1,8 @@
@@ -29921,7 +29921,7 @@ index 0000000..7707c77
 +#include "rk3288-az05-touch-ili2116.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-jp11s-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-jp11s-base.dtsi
 new file mode 100644
-index 0000000..479dc3f
+index 000000000000..479dc3f05e21
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-jp11s-base.dtsi
 @@ -0,0 +1,739 @@
@@ -30666,7 +30666,7 @@ index 0000000..479dc3f
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-jp11s.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-jp11s.dts
 new file mode 100644
-index 0000000..07cc93c
+index 000000000000..07cc93c3ae00
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-jp11s.dts
 @@ -0,0 +1,7 @@
@@ -30679,7 +30679,7 @@ index 0000000..07cc93c
 +#include "rk3288-az05-touch-ili2116.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-jp20-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-jp20-base.dtsi
 new file mode 100644
-index 0000000..7f79138
+index 000000000000..7f791383782f
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-jp20-base.dtsi
 @@ -0,0 +1,752 @@
@@ -31437,7 +31437,7 @@ index 0000000..7f79138
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-jp20.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-jp20.dts
 new file mode 100644
-index 0000000..a1d6418
+index 000000000000..a1d6418e1bb1
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-jp20.dts
 @@ -0,0 +1,8 @@
@@ -31451,7 +31451,7 @@ index 0000000..a1d6418
 +#include "rk3288-az05-touch-ili2116.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-jp21-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-jp21-base.dtsi
 new file mode 100644
-index 0000000..e69129a
+index 000000000000..e69129a42964
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-jp21-base.dtsi
 @@ -0,0 +1,752 @@
@@ -32209,7 +32209,7 @@ index 0000000..e69129a
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-jp21.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-jp21.dts
 new file mode 100644
-index 0000000..b95c23d
+index 000000000000..b95c23d310ff
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-jp21.dts
 @@ -0,0 +1,9 @@
@@ -32224,7 +32224,7 @@ index 0000000..b95c23d
 +#include "rk3288-az05-touch-ili2116.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-jp21x-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-jp21x-base.dtsi
 new file mode 100644
-index 0000000..0533d27
+index 000000000000..0533d27d6207
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-jp21x-base.dtsi
 @@ -0,0 +1,746 @@
@@ -32976,7 +32976,7 @@ index 0000000..0533d27
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-jp21x.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-jp21x.dts
 new file mode 100644
-index 0000000..724f95b
+index 000000000000..724f95b6ea45
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-jp21x.dts
 @@ -0,0 +1,8 @@
@@ -32990,7 +32990,7 @@ index 0000000..724f95b
 +#include "rk3288-az05-touch-ili2110.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-jp23-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-jp23-base.dtsi
 new file mode 100644
-index 0000000..3482d44
+index 000000000000..3482d444fc14
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-jp23-base.dtsi
 @@ -0,0 +1,733 @@
@@ -33729,7 +33729,7 @@ index 0000000..3482d44
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-jp23.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-jp23.dts
 new file mode 100644
-index 0000000..2cd8c78
+index 000000000000..2cd8c780f05a
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-jp23.dts
 @@ -0,0 +1,8 @@
@@ -33743,7 +33743,7 @@ index 0000000..2cd8c78
 +#include "rk3288-az05-touch-ili2110.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-nh08-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-nh08-base.dtsi
 new file mode 100644
-index 0000000..b92373d
+index 000000000000..b92373df3e12
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-nh08-base.dtsi
 @@ -0,0 +1,875 @@
@@ -34624,7 +34624,7 @@ index 0000000..b92373d
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-nh08.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-nh08.dts
 new file mode 100644
-index 0000000..e3914c6
+index 000000000000..e3914c642e98
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-nh08.dts
 @@ -0,0 +1,8 @@
@@ -34638,7 +34638,7 @@ index 0000000..e3914c6
 +#include "rk3288-az05-touch-ili2116.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-nh08s-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-nh08s-base.dtsi
 new file mode 100644
-index 0000000..efb2fed
+index 000000000000..efb2fed76916
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-nh08s-base.dtsi
 @@ -0,0 +1,782 @@
@@ -35426,7 +35426,7 @@ index 0000000..efb2fed
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-nh08s.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-nh08s.dts
 new file mode 100644
-index 0000000..f698ab7
+index 000000000000..f698ab77165f
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-nh08s.dts
 @@ -0,0 +1,8 @@
@@ -35440,7 +35440,7 @@ index 0000000..f698ab7
 +#include "rk3288-az05-touch-ili2116.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-nh10-base.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-nh10-base.dtsi
 new file mode 100644
-index 0000000..778d12f
+index 000000000000..778d12fd606e
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-nh10-base.dtsi
 @@ -0,0 +1,790 @@
@@ -36236,7 +36236,7 @@ index 0000000..778d12f
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-nh10.dts b/arch/arm/boot/dts/rockchip/rk3288-az05-nh10.dts
 new file mode 100644
-index 0000000..729f066
+index 000000000000..729f066ba863
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-nh10.dts
 @@ -0,0 +1,8 @@
@@ -36250,7 +36250,7 @@ index 0000000..729f066
 +#include "rk3288-az05-touch-ili2116.dtsi"
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-opt-acva2-2.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-acva2-2.dtsi
 new file mode 100644
-index 0000000..18b74ef
+index 000000000000..18b74efed837
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-acva2-2.dtsi
 @@ -0,0 +1,41 @@
@@ -36297,7 +36297,7 @@ index 0000000..18b74ef
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-opt-acva2-3.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-acva2-3.dtsi
 new file mode 100644
-index 0000000..341c7f8
+index 000000000000..341c7f8fba06
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-acva2-3.dtsi
 @@ -0,0 +1,22 @@
@@ -36325,7 +36325,7 @@ index 0000000..341c7f8
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-opt-acva2.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-acva2.dtsi
 new file mode 100644
-index 0000000..93061a6
+index 000000000000..93061a6e14f3
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-acva2.dtsi
 @@ -0,0 +1,250 @@
@@ -36581,7 +36581,7 @@ index 0000000..93061a6
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-opt-hg04.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-hg04.dtsi
 new file mode 100644
-index 0000000..8763849
+index 000000000000..876384983bbe
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-hg04.dtsi
 @@ -0,0 +1,23 @@
@@ -36610,7 +36610,7 @@ index 0000000..8763849
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-opt-jp20.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-jp20.dtsi
 new file mode 100644
-index 0000000..46c51cb
+index 000000000000..46c51cb7c59e
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-jp20.dtsi
 @@ -0,0 +1,24 @@
@@ -36640,7 +36640,7 @@ index 0000000..46c51cb
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-opt-jp21.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-jp21.dtsi
 new file mode 100644
-index 0000000..5229c21
+index 000000000000..5229c210dfde
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-opt-jp21.dtsi
 @@ -0,0 +1,27 @@
@@ -36673,7 +36673,7 @@ index 0000000..5229c21
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-touch-ili2110.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-touch-ili2110.dtsi
 new file mode 100644
-index 0000000..1cd1eb1
+index 000000000000..1cd1eb106cb1
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-touch-ili2110.dtsi
 @@ -0,0 +1,59 @@
@@ -36738,7 +36738,7 @@ index 0000000..1cd1eb1
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05-touch-ili2116.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05-touch-ili2116.dtsi
 new file mode 100644
-index 0000000..b9db30f
+index 000000000000..b9db30f630c9
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05-touch-ili2116.dtsi
 @@ -0,0 +1,45 @@
@@ -36789,7 +36789,7 @@ index 0000000..b9db30f
 +};
 diff --git a/arch/arm/boot/dts/rockchip/rk3288-az05.dtsi b/arch/arm/boot/dts/rockchip/rk3288-az05.dtsi
 new file mode 100644
-index 0000000..a8b20fd
+index 000000000000..a8b20fdeebdb
 --- /dev/null
 +++ b/arch/arm/boot/dts/rockchip/rk3288-az05.dtsi
 @@ -0,0 +1,1149 @@
@@ -37942,6 +37942,3 @@ index 0000000..a8b20fd
 +		status = "okay";
 +	};
 +};
--- 
-2.43.0
-

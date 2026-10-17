@@ -17,15 +17,6 @@ python () {
     if prov == 'prebuilt':
         return
 
-    # az01-mpc's vendor kernel is 6.18.26; linux-yocto 6.6 would be a silent
-    # four-year downgrade, not an upgrade. Make it an explicit decision.
-    if (d.getVar('MACHINE') == 'az01-mpc'
-            and d.getVar('AZ0X_KERNEL_ALLOW_DOWNGRADE') != '1'):
-        raise bb.parse.SkipRecipe(
-            "az01-mpc ships vendor kernel 6.18.26; AZ0X_KERNEL_PROVIDER='%s' "
-            "would build 6.6 instead. Set AZ0X_KERNEL_ALLOW_DOWNGRADE = \"1\" "
-            "if that is genuinely what you want." % prov)
-
     # az0x-signed verifies a signed FIT from its kernel partition before
     # starting it. A from-source kernel is emitted as an unsigned FIT in the
     # vendor shape (az0x-signed-fit.inc) for an external tool to sign and

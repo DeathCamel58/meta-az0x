@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: az0x <dev@localhost>
 Date: Fri, 18 Sep 2026 12:23:52 -0400
-Subject: [PATCH 4/6] ASoC: codecs: add the inMusic AZ0x audio codec
+Subject: [PATCH 04/14] ASoC: codecs: add the inMusic AZ0x audio codec
 
 The DAC on inMusic AZ0x boards (Denon DJ, Numark, Rane, Akai on RK3288) has
 no control interface at all - no I2C, no SPI, no registers. All it exposes is
@@ -37,10 +37,10 @@ Upstream-Status: Inappropriate [vendor board support]
  create mode 100644 sound/soc/codecs/az0x-audio-codec.c
 
 diff --git a/sound/soc/codecs/Kconfig b/sound/soc/codecs/Kconfig
-index 6d105a23c828..53f8910d62cf 100644
+index 91ac99bc3edb..f5f748719b2e 100644
 --- a/sound/soc/codecs/Kconfig
 +++ b/sound/soc/codecs/Kconfig
-@@ -1151,6 +1151,14 @@ config SND_SOC_MAX98095
+@@ -1334,6 +1334,14 @@ config SND_SOC_MAX98095
  	tristate
  	depends on I2C
  
@@ -56,25 +56,25 @@ index 6d105a23c828..53f8910d62cf 100644
  	tristate "Maxim MAX98357A CODEC"
  
 diff --git a/sound/soc/codecs/Makefile b/sound/soc/codecs/Makefile
-index a87e56938ce5..b14fa24d1061 100644
+index da4077463278..149ccb1d5269 100644
 --- a/sound/soc/codecs/Makefile
 +++ b/sound/soc/codecs/Makefile
-@@ -145,6 +145,7 @@ snd-soc-max9768-objs := max9768.o
- snd-soc-max98088-objs := max98088.o
- snd-soc-max98090-objs := max98090.o
- snd-soc-max98095-objs := max98095.o
-+snd-soc-az0x-audio-codec-objs := az0x-audio-codec.o
- snd-soc-max98357a-objs := max98357a.o
- snd-soc-max98371-objs := max98371.o
- snd-soc-max9867-objs := max9867.o
-@@ -526,6 +527,7 @@ obj-$(CONFIG_SND_SOC_MAX9768)	+= snd-soc-max9768.o
- obj-$(CONFIG_SND_SOC_MAX98088)	+= snd-soc-max98088.o
- obj-$(CONFIG_SND_SOC_MAX98090)	+= snd-soc-max98090.o
- obj-$(CONFIG_SND_SOC_MAX98095)	+= snd-soc-max98095.o
+@@ -56,6 +56,7 @@ snd-soc-aw88395-y := aw88395/aw88395.o \
+ snd-soc-aw88166-y := aw88166.o
+ snd-soc-aw88261-y := aw88261.o
+ snd-soc-aw88399-y := aw88399.o
++snd-soc-az0x-audio-codec-y := az0x-audio-codec.o
+ snd-soc-bd28623-y := bd28623.o
+ snd-soc-bt-sco-y := bt-sco.o
+ snd-soc-chv3-codec-y := chv3-codec.o
+@@ -488,6 +489,7 @@ obj-$(CONFIG_SND_SOC_AW88395)	+=snd-soc-aw88395.o
+ obj-$(CONFIG_SND_SOC_AW88166)	+=snd-soc-aw88166.o
+ obj-$(CONFIG_SND_SOC_AW88261)	+=snd-soc-aw88261.o
+ obj-$(CONFIG_SND_SOC_AW88399)	+= snd-soc-aw88399.o
 +obj-$(CONFIG_SND_SOC_AZ0X_AUDIO_CODEC)	+= snd-soc-az0x-audio-codec.o
- obj-$(CONFIG_SND_SOC_MAX98357A)	+= snd-soc-max98357a.o
- obj-$(CONFIG_SND_SOC_MAX98371)	+= snd-soc-max98371.o
- obj-$(CONFIG_SND_SOC_MAX9867)	+= snd-soc-max9867.o
+ obj-$(CONFIG_SND_SOC_BD28623)	+= snd-soc-bd28623.o
+ obj-$(CONFIG_SND_SOC_BT_SCO)	+= snd-soc-bt-sco.o
+ obj-$(CONFIG_SND_SOC_CHV3_CODEC) += snd-soc-chv3-codec.o
 diff --git a/sound/soc/codecs/az0x-audio-codec.c b/sound/soc/codecs/az0x-audio-codec.c
 new file mode 100644
 index 000000000000..b89807b898ed

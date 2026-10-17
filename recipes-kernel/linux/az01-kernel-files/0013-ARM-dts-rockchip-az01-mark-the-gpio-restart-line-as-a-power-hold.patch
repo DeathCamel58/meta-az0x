@@ -1,7 +1,7 @@
-From 358e320a890197e9d58ad05c657d4a031ab67ec7 Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Dylan Corrales <deathcamel58@gmail.com>
 Date: Fri, 9 Oct 2026 12:53:07 -0400
-Subject: [PATCH 13/13] ARM: dts: rockchip: az01: mark the gpio-restart line as
+Subject: [PATCH 13/14] ARM: dts: rockchip: az01: mark the gpio-restart line as
  a power hold
 
 The AZ01 boards' gpio-restart drives PWR_OFF_DELAY (GPIO0_B1), which does

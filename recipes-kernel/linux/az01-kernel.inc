@@ -45,6 +45,15 @@ SRC_URI:append:az01 = " file://defconfig"
 # (DEBUG_KERNEL itself stays - EXPERT selects it.)
 KERNEL_FEATURES:remove:az01 = "features/debug/debug-kernel.scc"
 
+# meta-rockchip (since wrynose) also adds remove-non-rockchip-arch-arm.scc,
+# which switches off every other ARM platform. On this board that is not
+# cosmetic: SOC_OMAP5 and friends are the only thing selecting
+# REGULATOR_FIXED_VOLTAGE, HIGHMEM, VFP and NEON, none of which our defconfig
+# sets itself. Without them the ACT8846 PMIC cannot register, eMMC never probes
+# and boot stops at "Waiting for root device". Keep the platforms until those
+# symbols are pinned explicitly.
+KERNEL_FEATURES:remove:az01 = "bsp/rockchip/remove-non-rockchip-arch-arm.scc"
+
 SRC_URI:append:az01 = " file://az01-base.cfg"
 
 # The board device trees. kernel-devicetree.bbclass literally runs
@@ -110,7 +119,7 @@ SRC_URI:append:az01 = " file://0007-usb-misc-add-the-inMusic-AZ01-USB-hub-attach
 # children at boot, so the format is not ours to change. Mainline rejects the
 # whole node, which loses the framebuffer region the bootloader hands over and
 # lets CMA be placed on top of it. See the patch header.
-SRC_URI:append:az01 = " file://0008-of-fdt-honor-reserved-memory-own-cells.patch"
+SRC_URI:append:az01 = " file://0008-of-reserved_mem-honor-reserved-memory-own-cells.patch"
 
 # The ILI9881C-based panels - the Prime GO's among them. They go into the
 # in-tree ILI9881C driver rather than ours: one patch per driver.

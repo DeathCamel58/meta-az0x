@@ -14,7 +14,7 @@
 # container header. Each board conf declares three facts and nothing else:
 # AZ0X_BOARD_DIR (its vendor/ subdir), AZ0X_BOARD_KVER and AZ0X_ROOTFS_KIB.
 #
-# The kernel is built from source by default (linux-yocto 6.6 with this
+# The kernel is built from source by default (linux-yocto 6.18 with this
 # layer's device trees and drivers), or the vendor's compiled kernel can be
 # staged instead; see az01-kernel.inc. No bootloader is built: the vendor's
 # u-boot loads the kernel and device tree from the rootfs, and at flash time

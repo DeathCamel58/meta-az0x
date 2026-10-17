@@ -1,8 +1,8 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: az0x <dev@localhost>
 Date: Fri, 18 Sep 2026 12:43:13 -0400
-Subject: [PATCH 6/6] pinctrl: rockchip: accept and ignore slew-rate instead of
- failing
+Subject: [PATCH 06/14] pinctrl: rockchip: accept and ignore slew-rate instead
+ of failing
 
 No Rockchip SoC implements slew rate in this driver - the string does not
 appear in it at all - so rockchip_pinconf_set() falls through to the default
@@ -32,10 +32,10 @@ Upstream-Status: Inappropriate [workaround for an unimplemented feature]
  1 file changed, 12 insertions(+)
 
 diff --git a/drivers/pinctrl/pinctrl-rockchip.c b/drivers/pinctrl/pinctrl-rockchip.c
-index 0c2382480c24..44d66bda4d82 100644
+index 834229831de9..2f70d576a3fb 100644
 --- a/drivers/pinctrl/pinctrl-rockchip.c
 +++ b/drivers/pinctrl/pinctrl-rockchip.c
-@@ -2914,6 +2914,18 @@ static int rockchip_pinconf_set(struct pinctrl_dev *pctldev, unsigned int pin,
+@@ -3352,6 +3352,18 @@ static int rockchip_pinconf_set(struct pinctrl_dev *pctldev, unsigned int pin,
  			if (rc < 0)
  				return rc;
  			break;

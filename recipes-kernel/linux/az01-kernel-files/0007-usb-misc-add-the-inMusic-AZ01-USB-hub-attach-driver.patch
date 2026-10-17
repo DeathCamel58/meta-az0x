@@ -1,7 +1,7 @@
-From 7aedb9abf89110115ae5f3ba6ab45a61d107c9cd Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Dylan Corrales <deathcamel58@gmail.com>
 Date: Sun, 4 Oct 2026 14:54:13 -0400
-Subject: [PATCH] usb: misc: add the inMusic AZ01 USB hub attach driver
+Subject: [PATCH 07/14] usb: misc: add the inMusic AZ01 USB hub attach driver
 
 On AZ01 boards that have one - jp13 (Denon DJ SC6000) and relatives -
 every user-facing USB port, the internal SATA drive bay and the control
@@ -37,13 +37,13 @@ Upstream-Status: Pending [board support for an unreleased platform]
  create mode 100644 drivers/usb/misc/az01-usb-hub.c
 
 diff --git a/drivers/usb/misc/Kconfig b/drivers/usb/misc/Kconfig
-index fe1b5fec1dfc..979fdd83b07a 100644
+index 0b56b773dbdf..d1903c94b3c6 100644
 --- a/drivers/usb/misc/Kconfig
 +++ b/drivers/usb/misc/Kconfig
-@@ -319,3 +319,16 @@ config USB_ONBOARD_HUB
- 	  this config will enable the driver and it will automatically
- 	  match the state of the USB subsystem. If this driver is a
- 	  module it will be called onboard_usb_hub.
+@@ -359,3 +359,16 @@ config USB_ONBOARD_DEV_USB5744
+ 	  during hub start-up configuration stage. It is must to enable this
+ 	  option on AMD Kria KR260 Robotics Starter Kit as this hub is
+ 	  connected to USB-SD converter which mounts the root filesystem.
 +
 +config USB_AZ01_HUB
 +	tristate "inMusic AZ01 USB hub attach"
@@ -58,13 +58,13 @@ index fe1b5fec1dfc..979fdd83b07a 100644
 +
 +	  If this driver is a module it will be called az01-usb-hub.
 diff --git a/drivers/usb/misc/Makefile b/drivers/usb/misc/Makefile
-index 1992cc284d8a..3661b5346c57 100644
+index 494ab0377f35..283a2cf952d9 100644
 --- a/drivers/usb/misc/Makefile
 +++ b/drivers/usb/misc/Makefile
-@@ -33,3 +33,4 @@ obj-$(CONFIG_USB_SISUSBVGA)		+= sisusbvga/
+@@ -35,3 +35,4 @@ obj-$(CONFIG_USB_SISUSBVGA)		+= sisusbvga/
  obj-$(CONFIG_USB_LINK_LAYER_TEST)	+= lvstest.o
  obj-$(CONFIG_BRCM_USB_PINMAP)		+= brcmstb-usb-pinmap.o
- obj-$(CONFIG_USB_ONBOARD_HUB)		+= onboard_usb_hub.o
+ obj-$(CONFIG_USB_ONBOARD_DEV)		+= onboard_usb_dev.o
 +obj-$(CONFIG_USB_AZ01_HUB)		+= az01-usb-hub.o
 diff --git a/drivers/usb/misc/az01-usb-hub.c b/drivers/usb/misc/az01-usb-hub.c
 new file mode 100644
