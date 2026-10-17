@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Dylan Corrales <deathcamel58@gmail.com>
 Date: Tue, 6 Oct 2026 11:41:27 -0400
-Subject: [PATCH 03/14] drm/panel: add a Himax HX8260 panel driver
+Subject: [PATCH] drm/panel: add a Himax HX8260 panel driver
 
 Add a driver for the 800x1280 MIPI-DSI panels inMusic builds on a Himax
 controller: the URT UMO-P080MD-T fitted to the Denon DJ SC6000, and the
@@ -32,8 +32,8 @@ Upstream-Status: Inappropriate [vendor board support]
 ---
  drivers/gpu/drm/panel/Kconfig              |  12 +
  drivers/gpu/drm/panel/Makefile             |   1 +
- drivers/gpu/drm/panel/panel-himax-hx8260.c | 448 +++++++++++++++++++++
- 3 files changed, 461 insertions(+)
+ drivers/gpu/drm/panel/panel-himax-hx8260.c | 452 +++++++++++++++++++++
+ 3 files changed, 465 insertions(+)
  create mode 100644 drivers/gpu/drm/panel/panel-himax-hx8260.c
 
 diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
@@ -73,10 +73,10 @@ index 3615a761b44f..2a26b5ab5924 100644
  obj-$(CONFIG_DRM_PANEL_HIMAX_HX83112A) += panel-himax-hx83112a.o
 diff --git a/drivers/gpu/drm/panel/panel-himax-hx8260.c b/drivers/gpu/drm/panel/panel-himax-hx8260.c
 new file mode 100644
-index 000000000000..9b9d1bb2672b
+index 000000000000..5a4abe463392
 --- /dev/null
 +++ b/drivers/gpu/drm/panel/panel-himax-hx8260.c
-@@ -0,0 +1,448 @@
+@@ -0,0 +1,452 @@
 +// SPDX-License-Identifier: GPL-2.0-only
 +/*
 + * Himax HX8260 MIPI-DSI panels, as fitted to inMusic AZ01 boards (the
@@ -469,9 +469,13 @@ index 000000000000..9b9d1bb2672b
 +	 * which the Prime GO's panel tolerates but the SC6000's does not: the
 +	 * link comes up, the panel is configured, and the VOP still never sees
 +	 * a vblank, so every atomic commit ends in "flip_done timed out".
++	 *
++	 * NO_EOT_PACKET keeps the link what the vendor kernel sends: its
++	 * dw-mipi-dsi predates EoTp support and never transmits one. With
++	 * EoTp on, the picture comes up shifted about a third of a line.
 +	 */
 +	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
-+			  MIPI_DSI_MODE_LPM;
++			  MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_NO_EOT_PACKET;
 +
 +	drm_panel_init(&p->panel, dev, &hx8260_funcs,
 +		       DRM_MODE_CONNECTOR_DSI);

@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Dylan Corrales <deathcamel58@gmail.com>
 Date: Tue, 6 Oct 2026 08:59:30 -0400
-Subject: [PATCH 09/14] drm/panel: ilitek-ili9881c: Add the inMusic panels
+Subject: [PATCH] drm/panel: ilitek-ili9881c: Add the inMusic panels
 
 Add the five ILI9881C-based 800x1280 MIPI-DSI panels inMusic fits to its
 AZ01 devices, such as the Denon DJ Prime GO. The vendor's bootloader
@@ -24,13 +24,18 @@ there, and are marked as such.
 Datasheet for these panels can be found at:
 https://gtdisplays.com/Download/DriverIC/Ilitek-ILI9881C%20Datasheet.pdf
 
+The inMusic panels set MIPI_DSI_MODE_NO_EOT_PACKET. The vendor's
+dw-mipi-dsi never sends an EoTp, and mainline's now does unless told
+not to; on the SC6000's HX8260 that shifted the picture by about a third
+of a line. These panels were all driven without one on 6.6.
+
 Upstream-Status: Pending [new panels for an in-tree driver]
 ---
  drivers/gpu/drm/panel/panel-ilitek-ili9881c.c | 898 ++++++++++++++++++
  1 file changed, 898 insertions(+)
 
 diff --git a/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c b/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
-index ad4993b2f92a..e068e8a274ad 100644
+index ad4993b2f92a..1c003500db7a 100644
 --- a/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
 +++ b/drivers/gpu/drm/panel/panel-ilitek-ili9881c.c
 @@ -1704,6 +1704,819 @@ static int ili9881c_unprepare(struct drm_panel *panel)
@@ -911,7 +916,7 @@ index ad4993b2f92a..e068e8a274ad 100644
 +	.init_length = ARRAY_SIZE(umoh9522md_init),
 +	.mode = &umoh9522md_default_mode,
 +	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
-+		      MIPI_DSI_MODE_LPM,
++		      MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_NO_EOT_PACKET,
 +	.lanes = 4,
 +};
 +
@@ -920,7 +925,7 @@ index ad4993b2f92a..e068e8a274ad 100644
 +	.init_length = ARRAY_SIZE(umoh9522md_init),
 +	.mode = &inmusic_800x1280_mode,
 +	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
-+		      MIPI_DSI_MODE_LPM,
++		      MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_NO_EOT_PACKET,
 +	.lanes = 4,
 +};
 +
@@ -929,7 +934,7 @@ index ad4993b2f92a..e068e8a274ad 100644
 +	.init_length = ARRAY_SIZE(gvh101hd161h_init),
 +	.mode = &inmusic_800x1280_mode,
 +	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
-+		      MIPI_DSI_MODE_LPM,
++		      MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_NO_EOT_PACKET,
 +	.lanes = 4,
 +};
 +
@@ -938,7 +943,7 @@ index ad4993b2f92a..e068e8a274ad 100644
 +	.init_length = ARRAY_SIZE(mfc070ac_init),
 +	.mode = &inmusic_800x1280_mode,
 +	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
-+		      MIPI_DSI_MODE_LPM,
++		      MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_NO_EOT_PACKET,
 +	.lanes = 4,
 +};
 +
@@ -947,7 +952,7 @@ index ad4993b2f92a..e068e8a274ad 100644
 +	.init_length = ARRAY_SIZE(mfc101gc_init),
 +	.mode = &inmusic_800x1280_mode,
 +	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |
-+		      MIPI_DSI_MODE_LPM,
++		      MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_NO_EOT_PACKET,
 +	.lanes = 4,
 +};
 +

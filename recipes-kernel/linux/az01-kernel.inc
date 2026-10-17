@@ -146,6 +146,12 @@ SRC_URI:append:az01 = " file://0013-ARM-dts-rockchip-az01-mark-the-gpio-restart-
 # driver in the shared board layer; no Engine application code is involved.
 SRC_URI:append:az01 = " file://0014-nvmem-rockchip-add-RK3288-secure-bank-word-reads.patch"
 
+# Non-burst DSI timing. Since 6.7 the host counts a sync-pulse mode's
+# horizontal periods as if the lanes carried exactly the pixel bandwidth;
+# Rockchip runs them 25% faster, so every line came out short and the SC6000
+# panel showed only noise. Count in the real lane rate when it is higher.
+SRC_URI:append:az01 = " file://0015-drm-bridge-dw-mipi-dsi-count-non-burst-lbcc-in-the-real-lane-rate.patch"
+
 # The signed-boot machine needs a kernel FIT, not the zImage-in-rootfs shape
 # the other boards use. Gated internally on the az0x-signed override; a no-op
 # everywhere else. See the include for the FIT shape it emits.
