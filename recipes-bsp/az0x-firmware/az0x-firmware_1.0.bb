@@ -86,6 +86,12 @@ AZ0X_FIRMWARE_EXCLUDE ?= "ilitek eta5805-dsp-nh08.bin eta5805-dsp-nh10.bin \
                           jms578_std_v00.01.00.06_self_power.bin \
                           regulatory.db regulatory.db.p7s"
 
+# When a machine selects the public BCM43456 set (AZ0X_WIFI_FIRMWARE = "public"),
+# bcm43456-firmware-public installs these payloads instead. Leaving the vendor
+# copies in place would fail do_rootfs with check_data_file_clashes; dropping
+# them here means exactly one package owns each path.
+AZ0X_FIRMWARE_EXCLUDE:append = "${@' brcm/brcmfmac43456-sdio.bin brcm/BCM4345C5.hcd' if d.getVar('AZ0X_WIFI_FIRMWARE') == 'public' else ''}"
+
 do_install() {
     install -d ${D}${nonarch_base_libdir}/firmware
     cp -a ${S}/lib/firmware/. ${D}${nonarch_base_libdir}/firmware/
